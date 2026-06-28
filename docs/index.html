@@ -95,8 +95,8 @@
 </main>
 
 <!-- CREATE PROJECT MODAL -->
-<div id="createModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+<div id="createModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4" onclick="closeCreateModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold text-slate-900 mb-4">새 프로젝트 만들기</h3>
     <div class="space-y-4">
       <div>
@@ -117,8 +117,8 @@
 </div>
 
 <!-- API KEY MODAL -->
-<div id="apiKeyModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+<div id="apiKeyModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4" onclick="closeApiKeyModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold text-slate-900 mb-2">Anthropic API 키 설정</h3>
     <p class="text-sm text-slate-500 mb-1">AI 목업 생성에 사용됩니다. 키는 이 브라우저에만 저장됩니다.</p>
     <p class="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg mb-4">⚠️ 공유 PC에서는 사용 후 키를 삭제하세요.</p>
@@ -139,8 +139,8 @@
 </div>
 
 <!-- EDIT PROJECT MODAL -->
-<div id="editModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+<div id="editModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4" onclick="closeEditModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold text-slate-900 mb-4">프로젝트 수정</h3>
     <input type="hidden" id="editProjectId">
     <div class="space-y-4">

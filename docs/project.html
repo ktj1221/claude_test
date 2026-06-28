@@ -37,6 +37,7 @@
       #mobileOverlay.visible { display: block; }
       #mobileNav { display: flex; }
       #mockupToolbar .view-mode-btns { display: none; }
+      #rightPanelBtn { display: none; }
       .drag-handle { display: flex; justify-content: center; padding: 10px 0 6px; cursor: grab; shrink-0: 0; }
       .drag-handle-bar { width: 36px; height: 4px; background: #e2e8f0; border-radius: 2px; }
     }
@@ -200,7 +201,7 @@
       <span id="mockupVersionBadge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full"></span>
       <span id="mockupDescLabel" class="text-sm font-medium text-slate-700"></span>
       <div class="ml-auto flex items-center gap-2">
-        <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+        <div class="view-mode-btns flex items-center gap-1 bg-slate-100 rounded-lg p-1">
           <button onclick="setViewMode('desktop')" id="btnDesktop" class="px-3 py-1 text-xs rounded-md bg-white text-slate-900 shadow-sm transition-colors">데스크톱</button>
           <button onclick="setViewMode('mobile')" id="btnMobile" class="px-3 py-1 text-xs rounded-md text-slate-500 transition-colors">모바일</button>
         </div>
@@ -727,7 +728,7 @@ function deleteMockup(mid) {
   if(!confirm('이 목업 버전을 삭제하시겠습니까?')) return;
   localStorage.removeItem(`mg_comments_${mid}`);
   DB.deleteMockup(PROJECT_ID, mid);
-  if(selectedMockup?.id===mid){selectedMockup=null;showView('empty');}
+  if(selectedMockup?.id===mid){selectedMockup=null;showView('empty');renderComments();}
   renderHistory();
 }
 
