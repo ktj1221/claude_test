@@ -123,10 +123,38 @@
     <p class="text-sm text-slate-500 mb-1">AI 목업 생성에 사용됩니다. 키는 이 브라우저에만 저장됩니다.</p>
     <p class="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg mb-4">⚠️ 공유 PC에서는 사용 후 키를 삭제하세요.</p>
     <div class="space-y-3">
-      <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <div class="flex gap-3">
+      <div class="relative">
+        <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." class="w-full px-3 py-2 pr-10 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button onclick="toggleApiKeyVisibility()" id="apiKeyEyeBtn" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1">
+          <svg id="apiKeyEyeIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        </button>
+      </div>
+      <div class="flex gap-2">
         <button onclick="closeApiKeyModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">취소</button>
+        <button onclick="deleteApiKey()" id="apiKeyDeleteBtn" class="px-4 py-2 border border-red-200 text-red-500 text-sm font-medium rounded-lg hover:bg-red-50 hidden">삭제</button>
         <button onclick="saveApiKey()" class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROJECT MODAL -->
+<div id="editModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold text-slate-900 mb-4">프로젝트 수정</h3>
+    <input type="hidden" id="editProjectId">
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">프로젝트 이름 <span class="text-red-500">*</span></label>
+        <input id="editProjectName" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">설명 (선택)</label>
+        <textarea id="editProjectDesc" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">취소</button>
+        <button onclick="saveProjectEdit()" class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">저장</button>
       </div>
     </div>
   </div>
@@ -144,6 +172,7 @@ const DB = {
   getProject(id) { return this.getProjects().find(p => p.id === id); },
   saveProject(p) { const ps = this.getProjects().filter(x => x.id !== p.id); ps.unshift(p); this.set('mg_projects', ps); },
   deleteProject(id) {
+    this.get(`mg_mockups_${id}`).forEach(m => localStorage.removeItem(`mg_comments_${m.id}`));
     this.set('mg_projects', this.getProjects().filter(p => p.id !== id));
     ['mg_refs_','mg_mockups_','mg_members_','mg_chat_'].forEach(k => localStorage.removeItem(k+id));
   },
@@ -236,7 +265,10 @@ function createUser() {
 
 // ── API KEY MODAL ───────────────────────────────────
 function openApiKeyModal() {
-  document.getElementById('apiKeyInput').value = DB.getApiKey();
+  const key = DB.getApiKey();
+  document.getElementById('apiKeyInput').value = key;
+  document.getElementById('apiKeyInput').type = 'password';
+  document.getElementById('apiKeyDeleteBtn').classList.toggle('hidden', !key);
   document.getElementById('apiKeyModal').classList.remove('hidden');
 }
 function closeApiKeyModal() { document.getElementById('apiKeyModal').classList.add('hidden'); }
@@ -245,9 +277,45 @@ function saveApiKey() {
   closeApiKeyModal();
   updateApiKeyBtn();
 }
+function deleteApiKey() {
+  if (!confirm('API 키를 삭제하시겠습니까?')) return;
+  DB.setApiKey('');
+  closeApiKeyModal();
+  updateApiKeyBtn();
+}
+function toggleApiKeyVisibility() {
+  const input = document.getElementById('apiKeyInput');
+  const icon = document.getElementById('apiKeyEyeIcon');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  icon.innerHTML = showing
+    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>'
+    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>';
+}
 function updateApiKeyBtn() {
   const btn = document.getElementById('apiKeyBtn');
   btn.textContent = DB.getApiKey() ? '✅ API 키 설정됨' : '🔑 API 키 설정';
+}
+
+// ── EDIT PROJECT MODAL ──────────────────────────────
+function openEditModal(id) {
+  const p = DB.getProject(id);
+  if (!p) return;
+  document.getElementById('editProjectId').value = id;
+  document.getElementById('editProjectName').value = p.name;
+  document.getElementById('editProjectDesc').value = p.description || '';
+  document.getElementById('editModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('editProjectName').focus(), 50);
+}
+function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+function saveProjectEdit() {
+  const id = document.getElementById('editProjectId').value;
+  const name = document.getElementById('editProjectName').value.trim();
+  if (!name) return;
+  const p = DB.getProject(id);
+  DB.saveProject({ ...p, name, description: document.getElementById('editProjectDesc').value.trim() || null });
+  closeEditModal();
+  renderProjects();
 }
 
 // ── CREATE PROJECT MODAL ────────────────────────────
@@ -290,7 +358,10 @@ function renderProjects() {
           </svg>
         </div>
         <div class="flex items-center gap-1">
-          <button onclick="event.stopPropagation();deleteProject('${p.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+          <button onclick="event.stopPropagation();openEditModal('${p.id}')" class="p-1.5 text-slate-300 hover:text-indigo-500 transition-colors" title="수정">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          </button>
+          <button onclick="event.stopPropagation();deleteProject('${p.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors" title="삭제">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
           <svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -353,12 +424,35 @@ function seedDemoData() {
   ]);
 
   DB.set(`mg_chat_${pid}`, [
-    { id:'seed-ch1', userId:u1.id, userName:u1.name, userColor:u1.color, content:'올원뱅크 메인화면 리뉴얼 프로젝트 시작합니다. 기획안 기반 1차 목업 생성했어요.', createdAt:new Date(Date.now()-2*86400000).toISOString() },
-    { id:'seed-ch2', userId:u2.id, userName:u2.name, userColor:u2.color, content:'확인했어요! 전반적으로 괜찮은데 배너 쪽 여백이랑 폰트 크기 좀 조정이 필요할 것 같아요.', createdAt:new Date(Date.now()-47*3600000).toISOString() },
-    { id:'seed-ch3', userId:u3.id, userName:u3.name, userColor:u3.color, content:'개발 관점에서 구현 가능한 구조입니다. 터치 영역 크기만 맞춰주세요.', createdAt:new Date(Date.now()-46*3600000).toISOString() },
-    { id:'seed-ch4', userId:u1.id, userName:u1.name, userColor:u1.color, content:'v2 만들었습니다! 지출 분석 위젯도 추가했어요 확인해 보세요 🙂', createdAt:new Date(Date.now()-25*3600000).toISOString() },
-    { id:'seed-ch5', userId:u2.id, userName:u2.name, userColor:u2.color, content:'v2 훨씬 낫네요! 이 방향으로 진행해요 👍', createdAt:new Date(Date.now()-24*3600000).toISOString() },
-    { id:'seed-ch6', userId:u3.id, userName:u3.name, userColor:u3.color, content:'개발 일정 조율해서 다음 주 내로 퍼블리싱 시작할 수 있을 것 같습니다.', createdAt:new Date(Date.now()-20*3600000).toISOString() },
+    { id:'seed-ch1', userId:u1.id, content:'올원뱅크 메인화면 리뉴얼 프로젝트 시작합니다. 기획안 기반 1차 목업 생성했어요.', createdAt:new Date(Date.now()-2*86400000).toISOString() },
+    { id:'seed-ch2', userId:u2.id, content:'확인했어요! 전반적으로 괜찮은데 배너 쪽 여백이랑 폰트 크기 좀 조정이 필요할 것 같아요.', createdAt:new Date(Date.now()-47*3600000).toISOString() },
+    { id:'seed-ch3', userId:u3.id, content:'개발 관점에서 구현 가능한 구조입니다. 터치 영역 크기만 맞춰주세요.', createdAt:new Date(Date.now()-46*3600000).toISOString() },
+    { id:'seed-ch4', userId:u1.id, content:'v2 만들었습니다! 지출 분석 위젯도 추가했어요 확인해 보세요 🙂', createdAt:new Date(Date.now()-25*3600000).toISOString() },
+    { id:'seed-ch5', userId:u2.id, content:'v2 훨씬 낫네요! 이 방향으로 진행해요 👍', createdAt:new Date(Date.now()-24*3600000).toISOString() },
+    { id:'seed-ch6', userId:u3.id, content:'개발 일정 조율해서 다음 주 내로 퍼블리싱 시작할 수 있을 것 같습니다.', createdAt:new Date(Date.now()-20*3600000).toISOString() },
+  ]);
+
+  // ── 2nd seed project: SmartRoom 회의실 예약 앱 ──────
+  const pid2 = 'seed-p2';
+  DB.saveProject({ id:pid2, name:'SmartRoom 회의실 예약 앱', description:'사내 회의실 예약·관리 모바일 앱 신규 개발 UI/UX 기획 및 목업 제작', createdAt: new Date(Date.now()-1*86400000).toISOString() });
+  DB.set(`mg_members_${pid2}`, ['seed-u1','seed-u3']);
+
+  const mockupHtml3 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>SmartRoom</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#F4F6FF;max-width:390px;margin:0 auto;min-height:100vh}.hdr{background:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #EAECF5}.logo{color:#3B4FE0;font-weight:800;font-size:18px;letter-spacing:-.3px}.greeting{padding:20px;background:linear-gradient(135deg,#3B4FE0,#7B5EA7);color:#fff}.gname{font-size:20px;font-weight:700;margin-bottom:4px}.gsub{font-size:13px;opacity:.75}.today-card{background:rgba(255,255,255,.18);border-radius:14px;padding:14px;margin-top:14px}.tc-label{font-size:11px;opacity:.75;margin-bottom:10px}.tc-item{display:flex;align-items:center;gap:10px;margin-bottom:8px}.tc-time{font-size:13px;font-weight:700;white-space:nowrap;width:44px}.tc-name{font-size:13px;flex:1}.tc-tag{font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.25)}.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px}.qbtn{background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;border:none;cursor:pointer;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,.06)}.qbtn-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}.qbtn-t{font-size:13px;font-weight:600;color:#111}.qbtn-s{font-size:11px;color:#888;margin-top:2px}.section{padding:0 16px 16px}.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.sec-title{font-size:14px;font-weight:700;color:#111}.sec-more{font-size:12px;color:#3B4FE0}.room-list{display:flex;flex-direction:column;gap:8px}.room-card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)}.room-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}.room-name{font-size:14px;font-weight:600;color:#111}.room-floor{font-size:11px;color:#888;margin-top:2px}.room-status{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600}.available{background:#E8F5E9;color:#2E7D32}.busy{background:#FFF3E0;color:#E65100}.time-slots{display:flex;gap:5px;flex-wrap:wrap}.slot{font-size:11px;padding:4px 9px;border-radius:6px;font-weight:500}.slot-free{background:#EEF0FF;color:#3B4FE0}.slot-taken{background:#F5F5F5;color:#ccc;text-decoration:line-through}.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:390px;background:#fff;border-top:1px solid #EAECF5;display:flex;padding:10px 0 24px}.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px}.nl{font-size:10px;color:#bbb}.nic{font-size:21px}</style></head><body><div class="hdr"><span class="logo">🏢 SmartRoom</span><span style="font-size:20px">🔔</span></div><div class="greeting"><div class="gname">안녕하세요, 김태정 님 👋</div><div class="gsub">오늘의 예약 현황을 확인하세요.</div><div class="today-card"><div class="tc-label">📅 오늘 내 예약</div><div class="tc-item"><span class="tc-time">10:00</span><span class="tc-name">대회의실 A</span><span class="tc-tag">6층</span></div><div class="tc-item"><span class="tc-time">14:00</span><span class="tc-name">소회의실 3</span><span class="tc-tag">4층</span></div></div></div><div class="quick"><button class="qbtn"><div class="qbtn-icon" style="background:#EEF0FF">📅</div><div><div class="qbtn-t">빠른 예약</div><div class="qbtn-s">지금 바로 예약</div></div></button><button class="qbtn"><div class="qbtn-icon" style="background:#E8F5E9">📋</div><div><div class="qbtn-t">내 예약</div><div class="qbtn-s">전체 목록 보기</div></div></button></div><div class="section"><div class="sec-hdr"><span class="sec-title">🗺️ 회의실 현황</span><span class="sec-more">전체보기</span></div><div class="room-list"><div class="room-card"><div class="room-top"><div><div class="room-name">대회의실 A</div><div class="room-floor">6층 · 최대 12인 · TV·화이트보드</div></div><span class="room-status available">사용 가능</span></div><div class="time-slots"><span class="slot slot-taken">10:00</span><span class="slot slot-taken">11:00</span><span class="slot slot-free">12:00</span><span class="slot slot-free">13:00</span><span class="slot slot-free">14:00</span><span class="slot slot-free">15:00</span></div></div><div class="room-card"><div class="room-top"><div><div class="room-name">소회의실 1</div><div class="room-floor">4층 · 최대 4인 · 화이트보드</div></div><span class="room-status busy">사용 중</span></div><div class="time-slots"><span class="slot slot-taken">10:00</span><span class="slot slot-taken">11:00</span><span class="slot slot-taken">12:00</span><span class="slot slot-free">13:00</span><span class="slot slot-free">14:00</span><span class="slot slot-free">15:00</span></div></div><div class="room-card"><div class="room-top"><div><div class="room-name">화상회의실 B</div><div class="room-floor">3층 · 최대 8인 · 화상장비</div></div><span class="room-status available">사용 가능</span></div><div class="time-slots"><span class="slot slot-free">10:00</span><span class="slot slot-free">11:00</span><span class="slot slot-taken">12:00</span><span class="slot slot-taken">13:00</span><span class="slot slot-free">14:00</span><span class="slot slot-free">15:00</span></div></div></div></div><div style="height:88px"></div><nav class="bnav"><div class="ni"><span class="nic">🏠</span><span class="nl" style="color:#3B4FE0;font-weight:700">홈</span></div><div class="ni"><span class="nic">📅</span><span class="nl">예약하기</span></div><div class="ni"><span class="nic">📋</span><span class="nl">내예약</span></div><div class="ni"><span class="nic">👤</span><span class="nl">마이</span></div></nav></body></html>`;
+
+  const mid3 = 'seed-m3';
+  DB.set(`mg_mockups_${pid2}`, [
+    { id:mid3, version:1, proposalContent:'회의실 예약 앱 홈화면 - 오늘의 내 예약 현황, 빠른 예약 / 내 예약 버튼, 층별 회의실 목록과 시간대별 가용 현황 표시', htmlContent:mockupHtml3, createdAt:new Date(Date.now()-86400000+3600000).toISOString(), createdBy:u1.id },
+  ]);
+
+  DB.set(`mg_comments_${mid3}`, [
+    { id:'seed-c6', userId:u1.id, content:'초안 공유합니다! 층별 구분 방식이랑 슬롯 UI 어떻게 생각하세요?', createdAt:new Date(Date.now()-80000000).toISOString() },
+    { id:'seed-c7', userId:u3.id, content:'레이아웃 좋습니다. 예약 슬롯 탭 터치 시 예약 확정 플로우는 별도 화면으로 분리하는 게 개발하기 편할 것 같아요.', createdAt:new Date(Date.now()-79000000).toISOString() },
+  ]);
+
+  DB.set(`mg_chat_${pid2}`, [
+    { id:'seed-ch7', userId:u1.id, content:'SmartRoom 앱 기획 시작합니다! 홈화면 목업 초안 올려뒀으니 확인해 주세요 🙂', createdAt:new Date(Date.now()-86400000+1800000).toISOString() },
+    { id:'seed-ch8', userId:u3.id, content:'확인했어요. 기본 틀은 좋은데 예약 확정 후 알림 플로우도 같이 설계하면 좋겠어요.', createdAt:new Date(Date.now()-80000000).toISOString() },
+    { id:'seed-ch9', userId:u1.id, content:'맞아요, 알림 화면은 v2에서 추가할게요. 일단 이 방향으로 내부 검토 진행해봐요!', createdAt:new Date(Date.now()-78000000).toISOString() },
   ]);
 }
 
