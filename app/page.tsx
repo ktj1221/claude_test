@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Header } from './components/Header';
 
 interface Project {
   id: string;
@@ -23,8 +24,7 @@ export default function HomePage() {
   const fetchProjects = useCallback(async () => {
     try {
       const res = await fetch('/api/projects');
-      const data = await res.json();
-      setProjects(data);
+      setProjects(await res.json());
     } catch {
       console.error('프로젝트 목록 로드 실패');
     } finally {
@@ -32,17 +32,12 @@ export default function HomePage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!form.name.trim()) {
-      setError('프로젝트 이름을 입력해주세요.');
-      return;
-    }
+    if (!form.name.trim()) { setError('프로젝트 이름을 입력해주세요.'); return; }
     setCreating(true);
     try {
       const res = await fetch('/api/projects', {
@@ -51,10 +46,7 @@ export default function HomePage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || '생성 실패');
-        return;
-      }
+      if (!res.ok) { setError(data.error || '생성 실패'); return; }
       setForm({ name: '', description: '' });
       setShowCreateForm(false);
       fetchProjects();
@@ -67,17 +59,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h1 className="text-lg font-bold text-slate-900">MockupGen</h1>
-            <span className="text-sm text-slate-400 hidden sm:block">AI 목업 생성 도구</span>
+      <Header />
+
+      <main className="max-w-6xl mx-auto px-6 py-10">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-1">프로젝트</h2>
+            <p className="text-slate-500 text-sm">기획안을 목업으로 변환하고 팀과 협업하세요.</p>
           </div>
           <button
             onClick={() => setShowCreateForm(true)}
@@ -89,20 +77,7 @@ export default function HomePage() {
             새 프로젝트
           </button>
         </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Hero */}
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold text-slate-900 mb-3">기획안을 목업으로</h2>
-          <p className="text-slate-500 text-lg">
-            기획 내용을 입력하면 AI가 즉시 목업 화면을 생성합니다.
-            <br />
-            참조 화면을 등록하면 기존 시스템 스타일을 반영해 드립니다.
-          </p>
-        </div>
-
-        {/* Create Project Modal */}
         {showCreateForm && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
@@ -117,6 +92,7 @@ export default function HomePage() {
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     placeholder="예: 고객 포털 리뉴얼"
+                    autoFocus
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -125,24 +101,24 @@ export default function HomePage() {
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    placeholder="프로젝트에 대한 간략한 설명을 입력하세요."
+                    placeholder="프로젝트에 대한 간략한 설명"
                     rows={3}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   />
                 </div>
                 {error && <p className="text-sm text-red-600">{error}</p>}
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-3 pt-1">
                   <button
                     type="button"
                     onClick={() => { setShowCreateForm(false); setError(''); }}
-                    className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                    className="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50"
                   >
                     취소
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60"
                   >
                     {creating ? '생성 중...' : '만들기'}
                   </button>
@@ -152,7 +128,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Project List */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
@@ -167,7 +142,7 @@ export default function HomePage() {
           <div className="text-center py-20">
             <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
             <h3 className="text-slate-600 font-medium mb-2">아직 프로젝트가 없습니다</h3>
@@ -197,9 +172,7 @@ export default function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-indigo-700 transition-colors">
-                  {project.name}
-                </h3>
+                <h3 className="font-semibold text-slate-900 mb-1 group-hover:text-indigo-700 transition-colors">{project.name}</h3>
                 {project.description && (
                   <p className="text-sm text-slate-500 mb-3 line-clamp-2">{project.description}</p>
                 )}
@@ -216,9 +189,7 @@ export default function HomePage() {
                     </svg>
                     목업 {project.mockup_count}개
                   </span>
-                  <span className="ml-auto">
-                    {new Date(project.created_at).toLocaleDateString('ko-KR')}
-                  </span>
+                  <span className="ml-auto">{new Date(project.created_at).toLocaleDateString('ko-KR')}</span>
                 </div>
               </Link>
             ))}

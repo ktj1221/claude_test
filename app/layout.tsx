@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { UserProvider } from "./contexts/UserContext";
 
 export const metadata: Metadata = {
   title: "MockupGen - AI 목업 생성 도구",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="h-full">
-      <body className="min-h-full flex flex-col bg-slate-50">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-50">
+        <UserProvider>{children}</UserProvider>
+      </body>
     </html>
   );
 }
