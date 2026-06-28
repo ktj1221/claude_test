@@ -6,5 +6,9 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - RENTAL_ADMIN_PASSWORD=${RENTAL_ADMIN_PASSWORD:-admin1234}
+      # Required — no default. Set via .env file or environment:
+      #   echo "RENTAL_ADMIN_PASSWORD=your_strong_password" > .env
+      - RENTAL_ADMIN_PASSWORD=${RENTAL_ADMIN_PASSWORD:?RENTAL_ADMIN_PASSWORD must be set}
     restart: unless-stopped
+    # Ensure the mounted ./data directory is writable by the nextjs user (uid 1001)
+    # Run once before first start: mkdir -p ./data && chmod 777 ./data

@@ -17,8 +17,10 @@ interface RentalRequest {
   rental_end_date: string | null;
   status: string;
   requester_notes: string | null;
-  admin_notes: string | null;
+  approval_notes: string | null;
+  rejection_notes: string | null;
   return_notes: string | null;
+  completion_notes: string | null;
   request_photo: string | null;
   request_photo_mime: string;
   approval_photo: string | null;
@@ -43,16 +45,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 const ACTION_CONFIG: Record<string, { actions: string[]; label: Record<string, string> }> = {
-  pending:  { actions: ['approve', 'reject'], label: { approve: '승인', reject: '거절' } },
-  approved: { actions: ['mark_returned'], label: { mark_returned: '반납 처리' } },
-  returned: { actions: ['complete'], label: { complete: '반납 승인' } },
-  completed:{ actions: [], label: {} },
-  rejected: { actions: [], label: {} },
+  pending:   { actions: ['approve', 'reject'], label: { approve: '승인', reject: '거절' } },
+  approved:  { actions: ['mark_returned'],     label: { mark_returned: '반납 처리' } },
+  returned:  { actions: ['complete'],          label: { complete: '반납 승인' } },
+  completed: { actions: [], label: {} },
+  rejected:  { actions: [], label: {} },
 };
 
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-';
-  return new Date(dateStr).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+const STATUS_FILTERS = ['all', 'pending', 'approved', 'returned', 'completed', 'rejected'] as const;
+
+function formatDate(d: string | null) {
+  if (!d) return '-';
+  return new Date(d).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function PhotoUpload({ label, onChange }: { label: string; onChange: (data: string, mime: string) => void }) {
@@ -62,6 +66,7 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert('사진은 5MB 이하여야 합니다.'); return; }
     const reader = new FileReader();
     reader.onload = () => {
       const src = reader.result as string;
@@ -73,20 +78,20 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
 
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
       <div
         onClick={() => ref.current?.click()}
-        className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-indigo-400 transition-colors"
+        className="border-2 border-dashed border-slate-200 rounded-xl p-3 text-center cursor-pointer hover:border-indigo-400 active:border-indigo-600 transition-colors min-h-[80px] flex items-center justify-center"
       >
         {preview ? (
-          <img src={preview} alt={label} className="max-h-32 mx-auto rounded-lg object-contain" />
+          <img src={preview} alt={label} className="max-h-36 mx-auto rounded-lg object-contain" />
         ) : (
-          <div className="text-slate-400 py-2">
-            <svg className="w-6 h-6 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-slate-400">
+            <svg className="w-7 h-7 mx-auto mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <p className="text-xs">사진 업로드</p>
+            <p className="text-xs">사진 업로드 (선택)</p>
           </div>
         )}
       </div>
@@ -99,23 +104,18 @@ export default function AdminRentalPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selected, setSelected] = useState<RentalRequest | null>(null);
   const [actionState, setActionState] = useState<{ action: string; note: string; photo: string; photoMime: string } | null>(null);
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
 
-  const checkAuth = useCallback(async () => {
-    const res = await fetch('/api/rental/auth');
-    const data = await res.json();
-    if (!data.authenticated) router.push('/admin/rental/login');
-  }, [router]);
-
   const fetchRequests = useCallback(async () => {
     try {
       const res = await fetch(`/api/rental/requests?status=${statusFilter}`);
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
-      setRequests(await res.json());
+      const data = await res.json();
+      setRequests(Array.isArray(data) ? data : []);
     } catch {
       console.error('목록 로드 실패');
     } finally {
@@ -123,7 +123,7 @@ export default function AdminRentalPage() {
     }
   }, [statusFilter, router]);
 
-  useEffect(() => { checkAuth(); }, [checkAuth]);
+  // Single fetch on mount — fetchRequests already handles 401 redirect
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   async function handleLogout() {
@@ -137,10 +137,7 @@ export default function AdminRentalPage() {
     setActionError('');
     try {
       const body: Record<string, string> = { action: actionState.action };
-      if (actionState.note) {
-        if (['approve', 'reject', 'complete'].includes(actionState.action)) body.admin_notes = actionState.note;
-        else body.return_notes = actionState.note;
-      }
+      if (actionState.note) body.note = actionState.note;
       if (actionState.photo) { body.photo = actionState.photo; body.photo_mime = actionState.photoMime; }
 
       const res = await fetch(`/api/rental/requests/${selected.id}`, {
@@ -161,51 +158,61 @@ export default function AdminRentalPage() {
     }
   }
 
-  const statusCounts = requests.reduce((acc, r) => {
-    acc[r.status] = (acc[r.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Status counts from loaded requests (only valid when filter is 'all')
+  const statusCounts = statusFilter === 'all'
+    ? requests.reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {} as Record<string, number>)
+    : {};
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <h1 className="text-base font-bold text-slate-900">아이디어 그라운드 장비 관리</h1>
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+            <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate hidden sm:block">아이디어 그라운드 장비 관리</h1>
+            <h1 className="text-sm font-bold text-slate-900 sm:hidden">장비 관리</h1>
             <nav className="flex items-center gap-1">
-              <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg">대여 관리</span>
-              <Link href="/admin/rental/equipment" className="px-3 py-1.5 text-slate-500 hover:bg-slate-100 text-sm rounded-lg transition-colors">
-                장비 관리
+              <span className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 text-xs sm:text-sm font-medium rounded-lg">대여</span>
+              <Link href="/admin/rental/equipment" className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 text-xs sm:text-sm rounded-lg transition-colors">
+                장비
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/rental" target="_blank" className="text-xs text-slate-400 hover:text-slate-600">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Link href="/rental" target="_blank" className="text-xs text-slate-400 hover:text-slate-600 hidden sm:block">
               신청 페이지 →
             </Link>
-            <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 transition-colors">
+            <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 transition-colors py-1">
               로그아웃
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-5 gap-3 mb-6">
-          {(['all', 'pending', 'approved', 'returned', 'completed', 'rejected'] as const).map(s => (
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+        {/* Scrollable filter bar — works on mobile */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-4 sm:mb-6 scrollbar-none">
+          {STATUS_FILTERS.map(s => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`p-3 rounded-xl border text-sm font-medium transition-all ${statusFilter === s ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-all shrink-0 min-h-[40px] ${
+                statusFilter === s
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+              }`}
             >
               {s === 'all' ? '전체' : STATUS_CONFIG[s]?.label}
-              {s !== 'all' && statusCounts[s] ? <span className="ml-1 text-xs opacity-70">({statusCounts[s]})</span> : null}
+              {s !== 'all' && statusCounts[s] ? (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${statusFilter === s ? 'bg-white/20' : STATUS_CONFIG[s]?.bg + ' ' + STATUS_CONFIG[s]?.color}`}>
+                  {statusCounts[s]}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {[1, 2, 3].map(i => <div key={i} className="bg-white rounded-xl p-4 border border-slate-200 h-20 animate-pulse" />)}
           </div>
         ) : requests.length === 0 ? (
@@ -218,21 +225,23 @@ export default function AdminRentalPage() {
               <button
                 key={req.id}
                 onClick={() => { setSelected(req); setActionState(null); setActionError(''); }}
-                className={`w-full bg-white rounded-xl p-4 border text-left transition-all hover:shadow-md ${selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'}`}
+                className={`w-full bg-white rounded-xl p-3.5 sm:p-4 border text-left transition-all hover:shadow-md active:scale-[0.99] ${
+                  selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
                       {STATUS_CONFIG[req.status]?.label}
                     </span>
                     <span className="font-mono text-xs text-slate-400">{req.request_number}</span>
                   </div>
-                  <span className="text-xs text-slate-400">{formatDate(req.created_at)}</span>
+                  <span className="text-xs text-slate-400 shrink-0 ml-2">{formatDate(req.created_at)}</span>
                 </div>
-                <div className="mt-2 flex items-center gap-4">
-                  <span className="font-semibold text-slate-800">{req.equipment_name}</span>
-                  <span className="text-sm text-slate-500">{req.requester_name} · {req.requester_phone}</span>
-                  <span className="text-sm text-slate-400 truncate">{req.purpose}</span>
+                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+                  <span className="font-semibold text-slate-800 text-sm">{req.equipment_name}</span>
+                  <span className="text-sm text-slate-500">{req.requester_name}</span>
+                  <span className="text-sm text-slate-400 truncate hidden sm:block">{req.purpose}</span>
                 </div>
               </button>
             ))}
@@ -240,19 +249,21 @@ export default function AdminRentalPage() {
         )}
       </div>
 
+      {/* Detail panel — full screen on mobile, side drawer on desktop */}
       {selected && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-start justify-end p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
-              <div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start sm:justify-end">
+          <div className="bg-white w-full sm:w-[420px] sm:h-full rounded-t-2xl sm:rounded-none shadow-2xl flex flex-col max-h-[92vh] sm:max-h-screen">
+            {/* Panel header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
+              <div className="min-w-0">
                 <p className="font-mono text-xs text-slate-400">{selected.request_number}</p>
-                <h2 className="font-bold text-slate-900">{selected.equipment_name}</h2>
+                <h2 className="font-bold text-slate-900 truncate">{selected.equipment_name}</h2>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
+              <div className="flex items-center gap-2 ml-3 shrink-0">
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
                   {STATUS_CONFIG[selected.status]?.label}
                 </span>
-                <button onClick={() => { setSelected(null); setActionState(null); }} className="p-1 text-slate-400 hover:text-slate-600">
+                <button onClick={() => { setSelected(null); setActionState(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -260,58 +271,45 @@ export default function AdminRentalPage() {
               </div>
             </div>
 
-            <div className="p-5 space-y-4 overflow-y-auto max-h-[80vh]">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-xs text-slate-400 mb-0.5">신청자</p>
-                  <p className="font-medium text-slate-800">{selected.requester_name}</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-xs text-slate-400 mb-0.5">연락처</p>
-                  <p className="font-medium text-slate-800">{selected.requester_phone}</p>
-                </div>
-                {selected.requester_email && (
-                  <div className="col-span-2 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-400 mb-0.5">이메일</p>
-                    <p className="font-medium text-slate-800">{selected.requester_email}</p>
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-2.5 text-sm">
+                {[
+                  { label: '신청자', value: selected.requester_name },
+                  { label: '연락처', value: selected.requester_phone },
+                  ...(selected.requester_email ? [{ label: '이메일', value: selected.requester_email }] : []),
+                  ...(selected.rental_start_date ? [{ label: '대여 시작', value: selected.rental_start_date }] : []),
+                  ...(selected.rental_end_date ? [{ label: '반납 예정', value: selected.rental_end_date }] : []),
+                ].map(({ label, value }) => (
+                  <div key={label} className="p-3 bg-slate-50 rounded-xl">
+                    <p className="text-xs text-slate-400 mb-0.5">{label}</p>
+                    <p className="font-medium text-slate-800 text-sm break-all">{value}</p>
                   </div>
-                )}
-                <div className="col-span-2 p-3 bg-slate-50 rounded-lg">
+                ))}
+                <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
                   <p className="text-xs text-slate-400 mb-0.5">사용 목적</p>
-                  <p className="text-slate-800">{selected.purpose}</p>
+                  <p className="text-slate-800 text-sm">{selected.purpose}</p>
                 </div>
-                {selected.rental_start_date && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-400 mb-0.5">대여 시작일</p>
-                    <p className="text-slate-800">{selected.rental_start_date}</p>
-                  </div>
-                )}
-                {selected.rental_end_date && (
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-400 mb-0.5">반납 예정일</p>
-                    <p className="text-slate-800">{selected.rental_end_date}</p>
-                  </div>
-                )}
                 {selected.requester_notes && (
-                  <div className="col-span-2 p-3 bg-slate-50 rounded-lg">
+                  <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
                     <p className="text-xs text-slate-400 mb-0.5">신청자 메모</p>
-                    <p className="text-slate-800">{selected.requester_notes}</p>
+                    <p className="text-slate-700 text-sm">{selected.requester_notes}</p>
                   </div>
                 )}
               </div>
 
               {selected.request_photo && (
                 <div>
-                  <p className="text-xs font-medium text-slate-500 mb-1">신청 사진</p>
-                  <img src={`data:${selected.request_photo_mime};base64,${selected.request_photo}`} alt="신청 사진" className="max-h-40 rounded-xl object-contain border border-slate-200" />
+                  <p className="text-xs font-medium text-slate-500 mb-1.5">신청 사진</p>
+                  <img src={`data:${selected.request_photo_mime};base64,${selected.request_photo}`} alt="신청 사진" className="max-h-44 w-full rounded-xl object-contain border border-slate-200 bg-slate-50" />
                 </div>
               )}
 
               {selected.approved_at && (
                 <div className="p-3 bg-blue-50 rounded-xl">
                   <p className="text-xs text-blue-500 font-medium mb-1">승인 — {formatDate(selected.approved_at)}</p>
-                  {selected.admin_notes && selected.status !== 'completed' && <p className="text-sm text-blue-800 mb-2">{selected.admin_notes}</p>}
-                  {selected.approval_photo && <img src={`data:${selected.approval_photo_mime};base64,${selected.approval_photo}`} alt="승인 사진" className="max-h-32 rounded-lg object-contain" />}
+                  {selected.approval_notes && <p className="text-sm text-blue-800 mb-2">{selected.approval_notes}</p>}
+                  {selected.approval_photo && <img src={`data:${selected.approval_photo_mime};base64,${selected.approval_photo}`} alt="승인 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
 
@@ -319,21 +317,22 @@ export default function AdminRentalPage() {
                 <div className="p-3 bg-purple-50 rounded-xl">
                   <p className="text-xs text-purple-500 font-medium mb-1">반납 — {formatDate(selected.returned_at)}</p>
                   {selected.return_notes && <p className="text-sm text-purple-800 mb-2">{selected.return_notes}</p>}
-                  {selected.return_photo && <img src={`data:${selected.return_photo_mime};base64,${selected.return_photo}`} alt="반납 사진" className="max-h-32 rounded-lg object-contain" />}
+                  {selected.return_photo && <img src={`data:${selected.return_photo_mime};base64,${selected.return_photo}`} alt="반납 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
 
               {selected.completed_at && (
                 <div className="p-3 bg-green-50 rounded-xl">
                   <p className="text-xs text-green-500 font-medium mb-1">반납 승인 — {formatDate(selected.completed_at)}</p>
-                  {selected.completion_photo && <img src={`data:${selected.completion_photo_mime};base64,${selected.completion_photo}`} alt="완료 사진" className="max-h-32 rounded-lg object-contain" />}
+                  {selected.completion_notes && <p className="text-sm text-green-800 mb-2">{selected.completion_notes}</p>}
+                  {selected.completion_photo && <img src={`data:${selected.completion_photo_mime};base64,${selected.completion_photo}`} alt="완료 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
 
               {selected.rejected_at && (
                 <div className="p-3 bg-red-50 rounded-xl">
                   <p className="text-xs text-red-500 font-medium mb-1">거절 — {formatDate(selected.rejected_at)}</p>
-                  {selected.admin_notes && <p className="text-sm text-red-800">{selected.admin_notes}</p>}
+                  {selected.rejection_notes && <p className="text-sm text-red-800">{selected.rejection_notes}</p>}
                 </div>
               )}
 
@@ -345,7 +344,11 @@ export default function AdminRentalPage() {
                         <button
                           key={action}
                           onClick={() => setActionState({ action, note: '', photo: '', photoMime: '' })}
-                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${action === 'reject' ? 'bg-red-50 text-red-700 hover:bg-red-100' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors min-h-[48px] ${
+                            action === 'reject'
+                              ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          }`}
                         >
                           {ACTION_CONFIG[selected.status].label[action]}
                         </button>
@@ -353,7 +356,9 @@ export default function AdminRentalPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-slate-800">{ACTION_CONFIG[selected.status].label[actionState.action]}</h4>
+                      <h4 className="font-semibold text-slate-800">
+                        {ACTION_CONFIG[selected.status].label[actionState.action]}
+                      </h4>
 
                       <PhotoUpload
                         label="사진 (선택)"
@@ -361,13 +366,14 @@ export default function AdminRentalPage() {
                       />
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">메모 (선택)</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">메모 (선택)</label>
                         <textarea
                           value={actionState.note}
                           onChange={e => setActionState(s => s ? { ...s, note: e.target.value } : s)}
-                          placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모를 입력하세요.'}
+                          placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모'}
                           rows={2}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                          style={{ fontSize: '16px' }}
+                          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                         />
                       </div>
 
@@ -376,14 +382,18 @@ export default function AdminRentalPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setActionState(null); setActionError(''); }}
-                          className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50"
+                          className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 min-h-[48px]"
                         >
                           취소
                         </button>
                         <button
                           onClick={performAction}
                           disabled={processing}
-                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 ${actionState.action === 'reject' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+                          className={`flex-1 py-3 rounded-xl text-sm font-semibold disabled:opacity-60 min-h-[48px] ${
+                            actionState.action === 'reject'
+                              ? 'bg-red-600 text-white hover:bg-red-700'
+                              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          }`}
                         >
                           {processing ? '처리 중...' : '확인'}
                         </button>
@@ -393,12 +403,8 @@ export default function AdminRentalPage() {
                 </div>
               )}
 
-              <div className="pt-2 border-t border-slate-100">
-                <a
-                  href={`/rental/${selected.request_number}`}
-                  target="_blank"
-                  className="text-xs text-indigo-500 hover:underline"
-                >
+              <div className="pt-1 border-t border-slate-100">
+                <a href={`/rental/${selected.request_number}`} target="_blank" className="text-xs text-indigo-500 hover:underline">
                   현황 페이지 링크 열기 →
                 </a>
               </div>

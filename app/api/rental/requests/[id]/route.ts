@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb, verifyAdminSession, RentalStatus } from '@/lib/rental-db';
 
+const MAX_PHOTO_B64_LEN = Math.ceil((5 * 1024 * 1024) * 4 / 3);
+
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('rental_admin_token')?.value;
   return !!token && verifyAdminSession(token);
@@ -44,71 +46,89 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { action, admin_notes, return_notes, photo, photo_mime } = body;
+    const { action, note, photo, photo_mime } = body;
 
-    const db = getRentalDb();
-    const existing = db.prepare(`
-      SELECT r.*, e.id as equip_id
-      FROM rental_requests r
-      JOIN equipment e ON r.equipment_id = e.id
-      WHERE r.id = ?
-    `).get(id) as { status: RentalStatus; equip_id: string } | undefined;
-
-    if (!existing) {
-      return NextResponse.json({ error: '대여 신청을 찾을 수 없습니다.' }, { status: 404 });
+    if (photo && photo.length > MAX_PHOTO_B64_LEN) {
+      return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
 
-    const now = new Date().toISOString();
+    const db = getRentalDb();
 
-    if (action === 'approve') {
-      if (existing.status !== 'pending') {
-        return NextResponse.json({ error: '대기 중인 신청만 승인할 수 있습니다.' }, { status: 400 });
+    const performAction = db.transaction(() => {
+      const existing = db.prepare(`
+        SELECT r.status, e.id as equip_id
+        FROM rental_requests r
+        JOIN equipment e ON r.equipment_id = e.id
+        WHERE r.id = ?
+      `).get(id) as { status: RentalStatus; equip_id: string } | undefined;
+
+      if (!existing) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+
+      const now = new Date().toISOString();
+
+      if (action === 'approve') {
+        if (existing.status !== 'pending') {
+          throw Object.assign(new Error('대기 중인 신청만 승인할 수 있습니다.'), { code: 'invalid_state' });
+        }
+        db.prepare(`
+          UPDATE rental_requests SET
+            status = 'approved', approval_notes = ?,
+            approval_photo = ?, approval_photo_mime = ?, approved_at = ?
+          WHERE id = ?
+        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+
+        db.prepare('UPDATE equipment SET is_available = 0 WHERE id = ?').run(existing.equip_id);
+
+      } else if (action === 'reject') {
+        if (existing.status !== 'pending') {
+          throw Object.assign(new Error('대기 중인 신청만 거절할 수 있습니다.'), { code: 'invalid_state' });
+        }
+        db.prepare(`
+          UPDATE rental_requests SET
+            status = 'rejected', rejection_notes = ?, rejected_at = ?
+          WHERE id = ?
+        `).run(note || null, now, id);
+
+      } else if (action === 'mark_returned') {
+        if (existing.status !== 'approved') {
+          throw Object.assign(new Error('승인된 대여만 반납 처리할 수 있습니다.'), { code: 'invalid_state' });
+        }
+        db.prepare(`
+          UPDATE rental_requests SET
+            status = 'returned', return_notes = ?,
+            return_photo = ?, return_photo_mime = ?, returned_at = ?
+          WHERE id = ?
+        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+
+      } else if (action === 'complete') {
+        if (existing.status !== 'returned') {
+          throw Object.assign(new Error('반납 완료된 대여만 반납 승인할 수 있습니다.'), { code: 'invalid_state' });
+        }
+        db.prepare(`
+          UPDATE rental_requests SET
+            status = 'completed', completion_notes = ?,
+            completion_photo = ?, completion_photo_mime = ?, completed_at = ?
+          WHERE id = ?
+        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+
+        db.prepare('UPDATE equipment SET is_available = 1 WHERE id = ?').run(existing.equip_id);
+
+      } else {
+        throw Object.assign(new Error('유효하지 않은 액션입니다.'), { code: 'invalid_action' });
       }
-      db.prepare(`
-        UPDATE rental_requests SET
-          status = 'approved', admin_notes = ?, approval_photo = ?,
-          approval_photo_mime = ?, approved_at = ?
-        WHERE id = ?
-      `).run(admin_notes || null, photo || null, photo_mime || 'image/jpeg', now, id);
+    });
 
-      db.prepare('UPDATE equipment SET is_available = 0 WHERE id = ?').run(existing.equip_id);
-
-    } else if (action === 'reject') {
-      if (existing.status !== 'pending') {
-        return NextResponse.json({ error: '대기 중인 신청만 거절할 수 있습니다.' }, { status: 400 });
+    try {
+      performAction();
+    } catch (err) {
+      const e = err as Error & { code?: string };
+      if (e.code === 'not_found') {
+        return NextResponse.json({ error: '대여 신청을 찾을 수 없습니다.' }, { status: 404 });
       }
-      db.prepare(`
-        UPDATE rental_requests SET
-          status = 'rejected', admin_notes = ?, rejected_at = ?
-        WHERE id = ?
-      `).run(admin_notes || null, now, id);
-
-    } else if (action === 'mark_returned') {
-      if (existing.status !== 'approved') {
-        return NextResponse.json({ error: '승인된 대여만 반납 처리할 수 있습니다.' }, { status: 400 });
+      if (e.code === 'invalid_state' || e.code === 'invalid_action') {
+        return NextResponse.json({ error: e.message }, { status: 400 });
       }
-      db.prepare(`
-        UPDATE rental_requests SET
-          status = 'returned', return_notes = ?, return_photo = ?,
-          return_photo_mime = ?, returned_at = ?
-        WHERE id = ?
-      `).run(return_notes || null, photo || null, photo_mime || 'image/jpeg', now, id);
-
-    } else if (action === 'complete') {
-      if (existing.status !== 'returned') {
-        return NextResponse.json({ error: '반납 완료된 대여만 반납 승인할 수 있습니다.' }, { status: 400 });
-      }
-      db.prepare(`
-        UPDATE rental_requests SET
-          status = 'completed', admin_notes = ?, completion_photo = ?,
-          completion_photo_mime = ?, completed_at = ?
-        WHERE id = ?
-      `).run(admin_notes || null, photo || null, photo_mime || 'image/jpeg', now, id);
-
-      db.prepare('UPDATE equipment SET is_available = 1 WHERE id = ?').run(existing.equip_id);
-
-    } else {
-      return NextResponse.json({ error: '유효하지 않은 액션입니다.' }, { status: 400 });
+      throw err;
     }
 
     const updated = db.prepare(`

@@ -5,13 +5,37 @@ import {
   deleteAdminSession,
   getRentalDb,
 } from '@/lib/rental-db';
+import crypto from 'crypto';
 
-const ADMIN_PASSWORD = process.env.RENTAL_ADMIN_PASSWORD || 'admin1234';
+const ADMIN_PASSWORD = process.env.RENTAL_ADMIN_PASSWORD;
+
+function checkPassword(input: string): boolean {
+  if (!ADMIN_PASSWORD) return false;
+  // Constant-time comparison to prevent timing attacks
+  try {
+    const a = Buffer.from(input.padEnd(128).slice(0, 128));
+    const b = Buffer.from(ADMIN_PASSWORD.padEnd(128).slice(0, 128));
+    return (
+      a.length === b.length &&
+      crypto.timingSafeEqual(a, b) &&
+      input === ADMIN_PASSWORD
+    );
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
+    if (!ADMIN_PASSWORD) {
+      return NextResponse.json(
+        { error: 'RENTAL_ADMIN_PASSWORD 환경변수가 설정되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
+
     const { password } = await req.json();
-    if (password !== ADMIN_PASSWORD) {
+    if (!checkPassword(password ?? '')) {
       return NextResponse.json({ error: '비밀번호가 올바르지 않습니다.' }, { status: 401 });
     }
 

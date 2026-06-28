@@ -2,6 +2,8 @@ import { getDb } from './db';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 
+let rentalSchemaInitialized = false;
+
 export function initRentalSchema() {
   const db = getDb();
   db.exec(`
@@ -38,13 +40,21 @@ export function initRentalSchema() {
       status TEXT NOT NULL DEFAULT 'pending',
       requester_notes TEXT,
       admin_notes TEXT,
+      approval_notes TEXT,
+      rejection_notes TEXT,
       return_notes TEXT,
+      completion_notes TEXT,
       approved_at TEXT,
       returned_at TEXT,
       completed_at TEXT,
       rejected_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (equipment_id) REFERENCES equipment(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS request_counters (
+      date TEXT PRIMARY KEY,
+      count INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS admin_sessions (
@@ -54,34 +64,57 @@ export function initRentalSchema() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // Column migrations for existing installations
+  const migrations = [
+    'ALTER TABLE rental_requests ADD COLUMN approval_notes TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN rejection_notes TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN completion_notes TEXT',
+  ];
+  for (const sql of migrations) {
+    try { db.exec(sql); } catch { /* column already exists */ }
+  }
+
+  // Seed request_counters from existing data
+  db.exec(`
+    INSERT OR IGNORE INTO request_counters (date, count)
+    SELECT
+      substr(request_number, 4, 8),
+      MAX(CAST(substr(request_number, 13) AS INTEGER))
+    FROM rental_requests
+    WHERE request_number LIKE 'IG-________-%'
+    GROUP BY substr(request_number, 4, 8)
+  `);
 }
 
 export function getRentalDb() {
   const db = getDb();
-  initRentalSchema();
+  if (!rentalSchemaInitialized) {
+    initRentalSchema();
+    rentalSchemaInitialized = true;
+  }
   return db;
 }
 
 export function generateRequestNumber(): string {
   const db = getRentalDb();
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const prefix = `IG-${today}-`;
-  const lastRequest = db.prepare(`
-    SELECT request_number FROM rental_requests
-    WHERE request_number LIKE ?
-    ORDER BY request_number DESC LIMIT 1
-  `).get(`${prefix}%`) as { request_number: string } | undefined;
 
-  let nextNum = 1;
-  if (lastRequest) {
-    const parts = lastRequest.request_number.split('-');
-    nextNum = parseInt(parts[parts.length - 1]) + 1;
-  }
-  return `${prefix}${String(nextNum).padStart(5, '0')}`;
+  // Atomic increment — single statement, no TOCTOU race
+  const row = db.prepare(`
+    INSERT INTO request_counters (date, count) VALUES (?, 1)
+    ON CONFLICT(date) DO UPDATE SET count = count + 1
+    RETURNING count
+  `).get(today) as { count: number };
+
+  return `IG-${today}-${String(row.count).padStart(5, '0')}`;
 }
 
 export function createAdminSession(): string {
   const db = getRentalDb();
+  // Clean up expired sessions on every new login
+  db.prepare("DELETE FROM admin_sessions WHERE expires_at <= datetime('now')").run();
+
   const id = uuidv4();
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -141,7 +174,10 @@ export interface RentalRequest {
   status: RentalStatus;
   requester_notes: string | null;
   admin_notes: string | null;
+  approval_notes: string | null;
+  rejection_notes: string | null;
   return_notes: string | null;
+  completion_notes: string | null;
   approved_at: string | null;
   returned_at: string | null;
   completed_at: string | null;

@@ -4,25 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 
-interface RentalStatus {
-  id: string;
+interface RentalBasic {
   request_number: string;
-  requester_name: string;
-  purpose: string;
+  status: string;
   rental_start_date: string | null;
   rental_end_date: string | null;
-  status: string;
-  requester_notes: string | null;
-  admin_notes: string | null;
-  return_notes: string | null;
-  request_photo: string | null;
-  request_photo_mime: string;
-  approval_photo: string | null;
-  approval_photo_mime: string;
-  return_photo: string | null;
-  return_photo_mime: string;
-  completion_photo: string | null;
-  completion_photo_mime: string;
   approved_at: string | null;
   returned_at: string | null;
   completed_at: string | null;
@@ -32,6 +18,25 @@ interface RentalStatus {
   equipment_category: string | null;
   equipment_image: string | null;
   equipment_image_mime: string;
+  verified: boolean;
+}
+
+interface RentalFull extends RentalBasic {
+  requester_name: string;
+  purpose: string;
+  requester_notes: string | null;
+  approval_notes: string | null;
+  rejection_notes: string | null;
+  return_notes: string | null;
+  completion_notes: string | null;
+  request_photo: string | null;
+  request_photo_mime: string;
+  approval_photo: string | null;
+  approval_photo_mime: string;
+  return_photo: string | null;
+  return_photo_mime: string;
+  completion_photo: string | null;
+  completion_photo_mime: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; step: number }> = {
@@ -44,18 +49,21 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return null;
-  return new Date(dateStr).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return new Date(dateStr).toLocaleString('ko-KR', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 function PhotoBlock({ label, data, mime }: { label: string; data: string | null; mime: string }) {
   if (!data) return null;
   return (
     <div className="mt-3">
-      <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
+      <p className="text-xs font-medium text-slate-500 mb-1.5">{label}</p>
       <img
         src={`data:${mime};base64,${data}`}
         alt={label}
-        className="max-h-48 rounded-xl object-contain border border-slate-200"
+        className="max-h-52 w-full rounded-xl object-contain border border-slate-200 bg-slate-50"
       />
     </div>
   );
@@ -63,56 +71,85 @@ function PhotoBlock({ label, data, mime }: { label: string; data: string | null;
 
 export default function RentalStatusPage({ params }: { params: Promise<{ number: string }> }) {
   const { number } = use(params);
-  const [data, setData] = useState<RentalStatus | null>(null);
+  const [data, setData] = useState<RentalBasic | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
 
-  const fetchStatus = useCallback(async () => {
+  const fetchStatus = useCallback(async (verify?: string) => {
     try {
-      const res = await fetch(`/api/rental/status/${encodeURIComponent(number)}`);
+      const url = verify
+        ? `/api/rental/status/${encodeURIComponent(number)}?verify=${encodeURIComponent(verify)}`
+        : `/api/rental/status/${encodeURIComponent(number)}`;
+      const res = await fetch(url);
       if (!res.ok) {
         const err = await res.json();
-        setError(err.error || '조회 실패');
+        if (verify) {
+          setVerifyError(err.error || '확인 실패');
+        } else {
+          setError(err.error || '조회 실패');
+        }
         return;
       }
       setData(await res.json());
+      setVerifyError('');
     } catch {
       setError('네트워크 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+      setVerifying(false);
     }
   }, [number]);
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
 
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    const last4 = phoneInput.replace(/\D/g, '').slice(-4);
+    if (last4.length < 4) {
+      setVerifyError('연락처 뒷 4자리를 입력해주세요.');
+      return;
+    }
+    setVerifying(true);
+    setVerifyError('');
+    await fetchStatus(last4);
+  }
+
   const steps = [
-    { key: 'created',  label: '신청',     icon: '📋' },
-    { key: 'approved', label: '승인',     icon: '✅' },
-    { key: 'returned', label: '반납',     icon: '📦' },
-    { key: 'completed',label: '반납 승인', icon: '🎉' },
+    { label: '신청',     icon: '📋' },
+    { label: '승인',     icon: '✅' },
+    { label: '반납',     icon: '📦' },
+    { label: '반납 승인', icon: '🎉' },
   ];
+
+  const full = data?.verified ? (data as RentalFull) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link href="/rental" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
+        <div className="max-w-xl mx-auto flex items-center justify-between">
+          <Link href="/rental" className="text-indigo-600 text-sm font-medium flex items-center gap-1 py-1">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             대여 신청
           </Link>
-          <h1 className="text-base font-semibold text-slate-900">대여 현황 조회</h1>
-          <div className="w-20" />
+          <h1 className="text-sm font-semibold text-slate-700">대여 현황 조회</h1>
+          <div className="w-16" />
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-xl mx-auto px-4 py-6">
         {loading ? (
-          <div className="bg-white rounded-2xl p-8 border border-slate-200 animate-pulse space-y-4">
-            <div className="h-6 bg-slate-200 rounded w-1/3" />
-            <div className="h-4 bg-slate-100 rounded w-2/3" />
-            <div className="h-32 bg-slate-100 rounded" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse">
+                <div className="h-5 bg-slate-200 rounded w-1/3 mb-3" />
+                <div className="h-4 bg-slate-100 rounded w-2/3" />
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="text-center py-16">
@@ -122,56 +159,60 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
               </svg>
             </div>
             <p className="text-slate-600 font-medium">{error}</p>
-            <Link href="/rental" className="text-indigo-600 text-sm mt-3 inline-block hover:underline">대여 신청 페이지로</Link>
+            <Link href="/rental" className="text-indigo-600 text-sm mt-3 inline-block hover:underline">
+              대여 신청 페이지로
+            </Link>
           </div>
         ) : data && (
-          <>
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
+          <div className="space-y-3">
+            {/* Status header card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <p className="text-xs text-slate-400 mb-1">신청 번호</p>
-                  <p className="text-xl font-bold text-indigo-600 tracking-wider">{data.request_number}</p>
+                  <p className="text-lg sm:text-xl font-bold text-indigo-600 tracking-wider">{data.request_number}</p>
                 </div>
-                {data.status !== 'rejected' ? (
-                  <span className={`text-sm font-medium px-3 py-1 rounded-full ${STATUS_CONFIG[data.status]?.bg} ${STATUS_CONFIG[data.status]?.color}`}>
-                    {STATUS_CONFIG[data.status]?.label}
-                  </span>
-                ) : (
-                  <span className="text-sm font-medium px-3 py-1 rounded-full bg-red-100 text-red-700">거절됨</span>
-                )}
+                <span className={`text-sm font-semibold px-3 py-1 rounded-full ${STATUS_CONFIG[data.status]?.bg} ${STATUS_CONFIG[data.status]?.color}`}>
+                  {STATUS_CONFIG[data.status]?.label}
+                </span>
               </div>
 
               <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
                 {data.equipment_image ? (
-                  <img src={`data:${data.equipment_image_mime};base64,${data.equipment_image}`} alt={data.equipment_name} className="w-14 h-14 object-cover rounded-lg" />
+                  <img src={`data:${data.equipment_image_mime};base64,${data.equipment_image}`} alt={data.equipment_name} className="w-12 h-12 object-cover rounded-lg shrink-0" />
                 ) : (
-                  <div className="w-14 h-14 bg-indigo-50 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-slate-900">{data.equipment_name}</p>
-                  {data.equipment_category && <p className="text-xs text-slate-400">{data.equipment_category}</p>}
+                  <p className="font-semibold text-slate-900 text-sm">{data.equipment_name}</p>
+                  {data.equipment_category && <p className="text-xs text-slate-400 mt-0.5">{data.equipment_category}</p>}
                 </div>
               </div>
             </div>
 
+            {/* Progress steps */}
             {data.status !== 'rejected' && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
+              <div className="bg-white rounded-2xl border border-slate-200 p-5">
                 <div className="flex items-center justify-between relative">
-                  <div className="absolute top-5 left-0 right-0 h-0.5 bg-slate-200 z-0" />
+                  <div className="absolute top-5 left-5 right-5 h-0.5 bg-slate-200 z-0" />
                   {steps.map((step, i) => {
                     const currentStep = STATUS_CONFIG[data.status]?.step ?? 0;
                     const isActive = i + 1 <= currentStep;
                     const isCurrent = i + 1 === currentStep;
                     return (
-                      <div key={step.key} className="flex flex-col items-center relative z-10">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 transition-all ${isActive ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-400'} ${isCurrent ? 'ring-4 ring-indigo-100' : ''}`}>
+                      <div key={step.label} className="flex flex-col items-center relative z-10">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-base border-2 transition-all
+                          ${isActive ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-300'}
+                          ${isCurrent ? 'ring-4 ring-indigo-100' : ''}`}>
                           {step.icon}
                         </div>
-                        <span className={`text-xs mt-2 font-medium ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>{step.label}</span>
+                        <span className={`text-xs mt-2 font-medium text-center ${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
+                          {step.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -179,83 +220,114 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
               </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4 space-y-4">
-              <h3 className="font-semibold text-slate-800">신청 내용</h3>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-slate-400 text-xs mb-0.5">신청자</p>
-                  <p className="text-slate-800 font-medium">{data.requester_name}</p>
+            {/* Phone verification gate */}
+            {!data.verified && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-slate-700">상세 내용 확인</h3>
                 </div>
-                <div>
-                  <p className="text-slate-400 text-xs mb-0.5">신청일</p>
-                  <p className="text-slate-800">{formatDate(data.created_at)}</p>
-                </div>
-                {data.rental_start_date && (
-                  <div>
-                    <p className="text-slate-400 text-xs mb-0.5">대여 시작일</p>
-                    <p className="text-slate-800">{data.rental_start_date}</p>
-                  </div>
-                )}
-                {data.rental_end_date && (
-                  <div>
-                    <p className="text-slate-400 text-xs mb-0.5">반납 예정일</p>
-                    <p className="text-slate-800">{data.rental_end_date}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">사용 목적</p>
-                <p className="text-slate-800 text-sm">{data.purpose}</p>
-              </div>
-
-              {data.requester_notes && (
-                <div>
-                  <p className="text-slate-400 text-xs mb-0.5">메모</p>
-                  <p className="text-slate-800 text-sm">{data.requester_notes}</p>
-                </div>
-              )}
-
-              <PhotoBlock label="신청 사진" data={data.request_photo} mime={data.request_photo_mime} />
-            </div>
-
-            {(data.approved_at || data.rejected_at || data.returned_at || data.completed_at) && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
-                <h3 className="font-semibold text-slate-800">처리 이력</h3>
-
-                {data.rejected_at && (
-                  <div className="p-3 bg-red-50 rounded-xl">
-                    <p className="text-xs text-red-500 font-medium mb-0.5">거절 — {formatDate(data.rejected_at)}</p>
-                    {data.admin_notes && <p className="text-sm text-red-700">{data.admin_notes}</p>}
-                  </div>
-                )}
-
-                {data.approved_at && (
-                  <div className="p-3 bg-blue-50 rounded-xl">
-                    <p className="text-xs text-blue-500 font-medium mb-0.5">승인 — {formatDate(data.approved_at)}</p>
-                    {data.admin_notes && <p className="text-sm text-blue-800">{data.admin_notes}</p>}
-                    <PhotoBlock label="승인 사진" data={data.approval_photo} mime={data.approval_photo_mime} />
-                  </div>
-                )}
-
-                {data.returned_at && (
-                  <div className="p-3 bg-purple-50 rounded-xl">
-                    <p className="text-xs text-purple-500 font-medium mb-0.5">반납 완료 — {formatDate(data.returned_at)}</p>
-                    {data.return_notes && <p className="text-sm text-purple-800">{data.return_notes}</p>}
-                    <PhotoBlock label="반납 사진" data={data.return_photo} mime={data.return_photo_mime} />
-                  </div>
-                )}
-
-                {data.completed_at && (
-                  <div className="p-3 bg-green-50 rounded-xl">
-                    <p className="text-xs text-green-500 font-medium mb-0.5">반납 승인 — {formatDate(data.completed_at)}</p>
-                    <PhotoBlock label="완료 사진" data={data.completion_photo} mime={data.completion_photo_mime} />
-                  </div>
-                )}
+                <p className="text-sm text-slate-500 mb-3">신청 시 입력한 연락처 뒷 4자리를 입력하면 상세 내용을 확인할 수 있습니다.</p>
+                <form onSubmit={handleVerify} className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={e => setPhoneInput(e.target.value)}
+                    placeholder="뒷 4자리"
+                    maxLength={4}
+                    style={{ fontSize: '16px' }}
+                    className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest"
+                  />
+                  <button
+                    type="submit"
+                    disabled={verifying}
+                    className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-60"
+                  >
+                    {verifying ? '확인 중...' : '확인'}
+                  </button>
+                </form>
+                {verifyError && <p className="text-sm text-red-600 mt-2">{verifyError}</p>}
               </div>
             )}
-          </>
+
+            {/* Full details */}
+            {full && (
+              <>
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                  <h3 className="font-semibold text-slate-800 text-sm">신청 내용</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">신청자</p>
+                      <p className="font-medium text-slate-800">{full.requester_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">신청일</p>
+                      <p className="text-slate-700">{formatDate(full.created_at)}</p>
+                    </div>
+                    {full.rental_start_date && (
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">대여 시작</p>
+                        <p className="text-slate-700">{full.rental_start_date}</p>
+                      </div>
+                    )}
+                    {full.rental_end_date && (
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">반납 예정</p>
+                        <p className="text-slate-700">{full.rental_end_date}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-0.5">사용 목적</p>
+                    <p className="text-sm text-slate-800">{full.purpose}</p>
+                  </div>
+                  {full.requester_notes && (
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">메모</p>
+                      <p className="text-sm text-slate-700">{full.requester_notes}</p>
+                    </div>
+                  )}
+                  <PhotoBlock label="신청 사진" data={full.request_photo} mime={full.request_photo_mime} />
+                </div>
+
+                {(full.approved_at || full.rejected_at || full.returned_at || full.completed_at) && (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+                    <h3 className="font-semibold text-slate-800 text-sm">처리 이력</h3>
+
+                    {full.rejected_at && (
+                      <div className="p-3 bg-red-50 rounded-xl">
+                        <p className="text-xs text-red-500 font-medium mb-1">거절 — {formatDate(full.rejected_at)}</p>
+                        {full.rejection_notes && <p className="text-sm text-red-800">{full.rejection_notes}</p>}
+                      </div>
+                    )}
+                    {full.approved_at && (
+                      <div className="p-3 bg-blue-50 rounded-xl">
+                        <p className="text-xs text-blue-500 font-medium mb-1">승인 — {formatDate(full.approved_at)}</p>
+                        {full.approval_notes && <p className="text-sm text-blue-800 mb-2">{full.approval_notes}</p>}
+                        <PhotoBlock label="승인 사진" data={full.approval_photo} mime={full.approval_photo_mime} />
+                      </div>
+                    )}
+                    {full.returned_at && (
+                      <div className="p-3 bg-purple-50 rounded-xl">
+                        <p className="text-xs text-purple-500 font-medium mb-1">반납 완료 — {formatDate(full.returned_at)}</p>
+                        {full.return_notes && <p className="text-sm text-purple-800 mb-2">{full.return_notes}</p>}
+                        <PhotoBlock label="반납 사진" data={full.return_photo} mime={full.return_photo_mime} />
+                      </div>
+                    )}
+                    {full.completed_at && (
+                      <div className="p-3 bg-green-50 rounded-xl">
+                        <p className="text-xs text-green-500 font-medium mb-1">반납 승인 — {formatDate(full.completed_at)}</p>
+                        {full.completion_notes && <p className="text-sm text-green-800 mb-2">{full.completion_notes}</p>}
+                        <PhotoBlock label="완료 사진" data={full.completion_photo} mime={full.completion_photo_mime} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
       </main>
     </div>

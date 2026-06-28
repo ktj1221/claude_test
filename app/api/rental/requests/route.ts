@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb, verifyAdminSession, generateRequestNumber } from '@/lib/rental-db';
 import { v4 as uuidv4 } from 'uuid';
 
+const MAX_PHOTO_B64_LEN = Math.ceil((5 * 1024 * 1024) * 4 / 3); // 5 MB → base64 length
+
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('rental_admin_token')?.value;
   return !!token && verifyAdminSession(token);
@@ -18,7 +20,12 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status');
 
     let query = `
-      SELECT r.*, e.name as equipment_name, e.category as equipment_category
+      SELECT r.id, r.request_number, r.equipment_id, r.requester_name, r.requester_phone,
+             r.requester_email, r.purpose, r.rental_start_date, r.rental_end_date,
+             r.status, r.requester_notes, r.admin_notes,
+             r.approval_notes, r.rejection_notes, r.return_notes, r.completion_notes,
+             r.approved_at, r.returned_at, r.completed_at, r.rejected_at, r.created_at,
+             e.name as equipment_name, e.category as equipment_category
       FROM rental_requests r
       JOIN equipment e ON r.equipment_id = e.id
     `;
@@ -58,38 +65,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '필수 항목을 모두 입력해주세요.' }, { status: 400 });
     }
 
-    const db = getRentalDb();
-    const equipment = db.prepare(
-      'SELECT * FROM equipment WHERE id = ? AND is_available = 1'
-    ).get(equipment_id) as { id: string } | undefined;
-
-    if (!equipment) {
-      return NextResponse.json({ error: '대여 가능한 장비가 아닙니다.' }, { status: 400 });
+    // Server-side photo size guard
+    if (request_photo && request_photo.length > MAX_PHOTO_B64_LEN) {
+      return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
 
-    const id = uuidv4();
-    const requestNumber = generateRequestNumber();
+    const db = getRentalDb();
 
-    db.prepare(`
-      INSERT INTO rental_requests (
-        id, request_number, equipment_id, requester_name, requester_phone,
-        requester_email, purpose, rental_start_date, rental_end_date,
-        requester_notes, request_photo, request_photo_mime
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      requestNumber,
-      equipment_id,
-      requester_name.trim(),
-      requester_phone.trim(),
-      requester_email?.trim() || null,
-      purpose.trim(),
-      rental_start_date || null,
-      rental_end_date || null,
-      requester_notes?.trim() || null,
-      request_photo || null,
-      request_photo_mime || 'image/jpeg',
-    );
+    // Atomic: check availability + insert in one transaction to prevent double-booking
+    const id = uuidv4();
+    let requestNumber: string;
+
+    const createRequest = db.transaction(() => {
+      const equipment = db.prepare(
+        'SELECT id FROM equipment WHERE id = ? AND is_available = 1'
+      ).get(equipment_id) as { id: string } | undefined;
+
+      if (!equipment) throw new Error('unavailable');
+
+      requestNumber = generateRequestNumber();
+
+      db.prepare(`
+        INSERT INTO rental_requests (
+          id, request_number, equipment_id, requester_name, requester_phone,
+          requester_email, purpose, rental_start_date, rental_end_date,
+          requester_notes, request_photo, request_photo_mime
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        requestNumber!,
+        equipment_id,
+        requester_name.trim(),
+        requester_phone.trim(),
+        requester_email?.trim() || null,
+        purpose.trim(),
+        rental_start_date || null,
+        rental_end_date || null,
+        requester_notes?.trim() || null,
+        request_photo || null,
+        request_photo_mime || 'image/jpeg',
+      );
+    });
+
+    try {
+      createRequest();
+    } catch (err) {
+      if (err instanceof Error && err.message === 'unavailable') {
+        return NextResponse.json({ error: '대여 가능한 장비가 아닙니다.' }, { status: 400 });
+      }
+      throw err;
+    }
 
     const request = db.prepare(`
       SELECT r.*, e.name as equipment_name, e.category as equipment_category
