@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - RENTAL_ADMIN_PASSWORD=${RENTAL_ADMIN_PASSWORD:-admin1234}
+    restart: unless-stopped
