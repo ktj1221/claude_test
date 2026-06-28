@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MockupGen - AI 목업 생성 도구</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif; }
+    .backdrop { backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <div class="px-6 h-14 flex items-center gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <span class="font-bold text-slate-900">MockupGen</span>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <button onclick="openApiKeyModal()" id="apiKeyBtn" class="px-3 py-1.5 text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+        🔑 API 키 설정
+      </button>
+      <div class="relative">
+        <button onclick="toggleUserMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <div id="headerAvatar" class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center text-xs font-bold text-white">?</div>
+          <span id="headerUserName" class="text-sm text-slate-500 hidden sm:block">사용자 선택</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+          <div class="p-3 border-b border-slate-100">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">사용자 전환</p>
+          </div>
+          <div id="userMenuList" class="max-h-52 overflow-y-auto"></div>
+          <div class="p-2 border-t border-slate-100" id="userMenuFooter">
+            <div id="createUserForm" class="hidden space-y-2 mb-2">
+              <input id="newUserName" type="text" placeholder="이름" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <input id="newUserRole" type="text" placeholder="직책/부서 (선택)" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <div class="flex gap-1.5">
+                <button onclick="hideNewUserForm()" class="flex-1 py-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg">취소</button>
+                <button onclick="createUser()" class="flex-1 py-1.5 text-xs text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">추가</button>
+              </div>
+            </div>
+            <button id="showNewUserFormBtn" onclick="showNewUserForm()" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              새 사용자 추가
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="max-w-6xl mx-auto px-6 py-10">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-900 mb-1">프로젝트</h2>
+      <p class="text-slate-500 text-sm">기획안을 목업으로 변환하고 팀과 협업하세요.</p>
+    </div>
+    <button onclick="openCreateModal()" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      새 프로젝트
+    </button>
+  </div>
+  <div id="projectGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="emptyState" class="hidden text-center py-20">
+    <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <h3 class="text-slate-600 font-medium mb-2">아직 프로젝트가 없습니다</h3>
+    <p class="text-slate-400 text-sm mb-6">첫 번째 프로젝트를 만들어 목업을 생성해 보세요.</p>
+    <button onclick="openCreateModal()" class="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">첫 프로젝트 만들기</button>
+  </div>
+</main>
+
+<!-- CREATE PROJECT MODAL -->
+<div id="createModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold text-slate-900 mb-4">새 프로젝트 만들기</h3>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">프로젝트 이름 <span class="text-red-500">*</span></label>
+        <input id="newProjectName" type="text" placeholder="예: 고객 포털 리뉴얼" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">설명 (선택)</label>
+        <textarea id="newProjectDesc" placeholder="프로젝트에 대한 간략한 설명" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+      </div>
+      <p id="createError" class="text-sm text-red-600 hidden"></p>
+      <div class="flex gap-3">
+        <button onclick="closeCreateModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">취소</button>
+        <button onclick="createProject()" class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">만들기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div id="apiKeyModal" class="hidden fixed inset-0 bg-black/40 backdrop z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold text-slate-900 mb-2">Anthropic API 키 설정</h3>
+    <p class="text-sm text-slate-500 mb-1">AI 목업 생성에 사용됩니다. 키는 이 브라우저에만 저장됩니다.</p>
+    <p class="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg mb-4">⚠️ 공유 PC에서는 사용 후 키를 삭제하세요.</p>
+    <div class="space-y-3">
+      <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <div class="flex gap-3">
+        <button onclick="closeApiKeyModal()" class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50">취소</button>
+        <button onclick="saveApiKey()" class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['red','orange','amber','green','teal','cyan','blue','indigo','violet','pink'];
+const COLOR_BG = { red:'#ef4444',orange:'#f97316',amber:'#f59e0b',green:'#22c55e',teal:'#14b8a6',cyan:'#06b6d4',blue:'#3b82f6',indigo:'#6366f1',violet:'#8b5cf6',pink:'#ec4899' };
+
+// ── DB ──────────────────────────────────────────────
+const DB = {
+  get(k, d=[]) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  getProjects() { return this.get('mg_projects'); },
+  getProject(id) { return this.getProjects().find(p => p.id === id); },
+  saveProject(p) { const ps = this.getProjects().filter(x => x.id !== p.id); ps.unshift(p); this.set('mg_projects', ps); },
+  deleteProject(id) {
+    this.set('mg_projects', this.getProjects().filter(p => p.id !== id));
+    ['mg_refs_','mg_mockups_','mg_members_','mg_chat_'].forEach(k => localStorage.removeItem(k+id));
+  },
+  getUsers() { return this.get('mg_users'); },
+  addUser(u) { const us = this.getUsers(); us.push(u); this.set('mg_users', us); },
+  getCurrentUser() { return this.get('mg_current_user', null); },
+  setCurrentUser(u) { this.set('mg_current_user', u); },
+  getApiKey() { return localStorage.getItem('mg_api_key') || ''; },
+  setApiKey(k) { localStorage.setItem('mg_api_key', k); },
+};
+
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+// ── USER MENU ───────────────────────────────────────
+function toggleUserMenu() {
+  const menu = document.getElementById('userMenu');
+  if (menu.classList.contains('hidden')) { renderUserMenu(); menu.classList.remove('hidden'); }
+  else menu.classList.add('hidden');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#userMenu') && !e.target.closest('[onclick="toggleUserMenu()"]')) {
+    document.getElementById('userMenu')?.classList.add('hidden');
+  }
+});
+
+function renderUserMenu() {
+  const users = DB.getUsers();
+  const current = DB.getCurrentUser();
+  const list = document.getElementById('userMenuList');
+  if (users.length === 0) {
+    list.innerHTML = '<p class="text-xs text-slate-400 px-3 py-2">등록된 사용자가 없습니다.</p>';
+    return;
+  }
+  list.innerHTML = users.map(u => `
+    <button onclick="selectUser('${u.id}')" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 text-left ${current?.id===u.id?'bg-indigo-50':''}">
+      <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style="background:${COLOR_BG[u.color]||'#6366f1'}">${u.name[0]}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-medium text-slate-800 truncate">${u.name}</p>
+        ${u.role&&u.role!=='member'?`<p class="text-[10px] text-slate-400 truncate">${u.role}</p>`:''}
+      </div>
+      ${current?.id===u.id?'<svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>':''}
+    </button>`).join('');
+}
+
+function selectUser(id) {
+  const user = DB.getUsers().find(u => u.id === id);
+  if (user) { DB.setCurrentUser(user); updateHeaderUser(); document.getElementById('userMenu').classList.add('hidden'); }
+}
+
+function updateHeaderUser() {
+  const u = DB.getCurrentUser();
+  const av = document.getElementById('headerAvatar');
+  const name = document.getElementById('headerUserName');
+  if (u) {
+    av.textContent = u.name[0];
+    av.style.background = COLOR_BG[u.color] || '#6366f1';
+    name.textContent = u.name;
+    name.classList.remove('text-slate-500');
+    name.classList.add('text-slate-800');
+  } else {
+    av.textContent = '?';
+    av.style.background = '#cbd5e1';
+    name.textContent = '사용자 선택';
+  }
+}
+
+function showNewUserForm() {
+  document.getElementById('createUserForm').classList.remove('hidden');
+  document.getElementById('showNewUserFormBtn').classList.add('hidden');
+  document.getElementById('newUserName').focus();
+}
+function hideNewUserForm() {
+  document.getElementById('createUserForm').classList.add('hidden');
+  document.getElementById('showNewUserFormBtn').classList.remove('hidden');
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserRole').value = '';
+}
+function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  if (!name) return;
+  const users = DB.getUsers();
+  const color = COLORS[users.length % COLORS.length];
+  const user = { id: uid(), name, role: document.getElementById('newUserRole').value.trim() || 'member', color };
+  DB.addUser(user);
+  DB.setCurrentUser(user);
+  updateHeaderUser();
+  hideNewUserForm();
+  document.getElementById('userMenu').classList.add('hidden');
+}
+
+// ── API KEY MODAL ───────────────────────────────────
+function openApiKeyModal() {
+  document.getElementById('apiKeyInput').value = DB.getApiKey();
+  document.getElementById('apiKeyModal').classList.remove('hidden');
+}
+function closeApiKeyModal() { document.getElementById('apiKeyModal').classList.add('hidden'); }
+function saveApiKey() {
+  DB.setApiKey(document.getElementById('apiKeyInput').value.trim());
+  closeApiKeyModal();
+  updateApiKeyBtn();
+}
+function updateApiKeyBtn() {
+  const btn = document.getElementById('apiKeyBtn');
+  btn.textContent = DB.getApiKey() ? '✅ API 키 설정됨' : '🔑 API 키 설정';
+}
+
+// ── CREATE PROJECT MODAL ────────────────────────────
+function openCreateModal() {
+  document.getElementById('createModal').classList.remove('hidden');
+  document.getElementById('newProjectName').value = '';
+  document.getElementById('newProjectDesc').value = '';
+  document.getElementById('createError').classList.add('hidden');
+  setTimeout(() => document.getElementById('newProjectName').focus(), 50);
+}
+function closeCreateModal() { document.getElementById('createModal').classList.add('hidden'); }
+function createProject() {
+  const name = document.getElementById('newProjectName').value.trim();
+  const err = document.getElementById('createError');
+  if (!name) { err.textContent = '프로젝트 이름을 입력해주세요.'; err.classList.remove('hidden'); return; }
+  const project = { id: uid(), name, description: document.getElementById('newProjectDesc').value.trim() || null, createdAt: new Date().toISOString() };
+  DB.saveProject(project);
+  closeCreateModal();
+  renderProjects();
+}
+
+document.getElementById('newProjectName').addEventListener('keydown', e => { if (e.key === 'Enter') createProject(); });
+
+// ── PROJECT LIST ────────────────────────────────────
+function renderProjects() {
+  const projects = DB.getProjects();
+  const grid = document.getElementById('projectGrid');
+  const empty = document.getElementById('emptyState');
+  if (projects.length === 0) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  grid.innerHTML = projects.map(p => {
+    const refs = DB.get(`mg_refs_${p.id}`).length;
+    const mockups = DB.get(`mg_mockups_${p.id}`).length;
+    return `
+    <div class="group bg-white rounded-xl p-5 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer" onclick="goToProject('${p.id}')">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+          <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+          </svg>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="event.stopPropagation();deleteProject('${p.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+          <svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+      <h3 class="font-semibold text-slate-900 mb-1 group-hover:text-indigo-700 transition-colors">${esc(p.name)}</h3>
+      ${p.description ? `<p class="text-sm text-slate-500 mb-3 line-clamp-2">${esc(p.description)}</p>` : ''}
+      <div class="flex items-center gap-3 text-xs text-slate-400">
+        <span>📷 참조 ${refs}/3</span>
+        <span>🖥 목업 ${mockups}개</span>
+        <span class="ml-auto">${new Date(p.createdAt).toLocaleDateString('ko-KR')}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function goToProject(id) { location.href = `project.html?id=${id}`; }
+
+function deleteProject(id) {
+  if (!confirm('이 프로젝트를 삭제하시겠습니까?\n(목업, 채팅 등 모든 데이터가 삭제됩니다)')) return;
+  DB.deleteProject(id);
+  renderProjects();
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── INIT ─────────────────────────────────────────────
+updateHeaderUser();
+updateApiKeyBtn();
+renderProjects();
+</script>
+</body>
+</html>

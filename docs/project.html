@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MockupGen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif; overflow: hidden; }
+    .backdrop { backdrop-filter: blur(4px); }
+    #mainLayout { height: calc(100vh - 56px); display: flex; overflow: hidden; }
+    #mockupFrame { border: none; width: 100%; height: 800px; }
+    #chatList { scrollbar-width: thin; }
+    #commentList { scrollbar-width: thin; }
+    .sidebar-scroll { overflow-y: auto; scrollbar-width: thin; }
+  </style>
+</head>
+<body class="bg-slate-50">
+
+<!-- HEADER -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 h-14">
+  <div class="px-5 h-14 flex items-center gap-3">
+    <a href="index.html" class="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors shrink-0">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+    </a>
+    <div class="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+      <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+    </div>
+    <span id="projectTitle" class="font-semibold text-slate-900 text-sm truncate max-w-xs"></span>
+    <div class="ml-auto flex items-center gap-2">
+      <div class="relative">
+        <button onclick="toggleUserMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <div id="headerAvatar" class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center text-xs font-bold text-white">?</div>
+          <span id="headerUserName" class="text-sm text-slate-500 hidden sm:block">사용자 선택</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+          <div class="p-3 border-b border-slate-100"><p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">사용자 전환</p></div>
+          <div id="userMenuList" class="max-h-52 overflow-y-auto"></div>
+          <div class="p-2 border-t border-slate-100">
+            <div id="createUserForm" class="hidden space-y-2 mb-2">
+              <input id="newUserName" type="text" placeholder="이름" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <input id="newUserRole" type="text" placeholder="직책/부서 (선택)" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <div class="flex gap-1.5">
+                <button onclick="hideNewUserForm()" class="flex-1 py-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg">취소</button>
+                <button onclick="createUser()" class="flex-1 py-1.5 text-xs text-white bg-indigo-600 rounded-lg">추가</button>
+              </div>
+            </div>
+            <button id="showNewUserFormBtn" onclick="showNewUserForm()" class="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              새 사용자 추가
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="mainLayout">
+  <!-- ── LEFT SIDEBAR ── -->
+  <aside class="w-72 bg-white border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
+    <!-- Tab bar -->
+    <div class="flex border-b border-slate-100 shrink-0">
+      <button onclick="switchLeftTab('refs')" id="tab-refs" class="flex-1 py-2.5 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors">참조</button>
+      <button onclick="switchLeftTab('generate')" id="tab-generate" class="flex-1 py-2.5 text-[11px] font-medium text-indigo-600 border-b-2 border-indigo-600 transition-colors">생성</button>
+      <button onclick="switchLeftTab('history')" id="tab-history" class="flex-1 py-2.5 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors">히스토리</button>
+      <button onclick="switchLeftTab('members')" id="tab-members" class="flex-1 py-2.5 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors">담당자</button>
+    </div>
+
+    <!-- REFS TAB -->
+    <div id="panel-refs" class="hidden flex-1 sidebar-scroll p-4 space-y-3">
+      <p class="text-xs text-slate-500">기존 화면 최대 3개를 등록하면 AI가 스타일을 참고해 목업을 생성합니다.</p>
+      <div id="refScreenGrid" class="grid grid-cols-3 gap-2"></div>
+      <div id="refUploadArea">
+        <p id="refUploadError" class="text-xs text-red-600 hidden mb-1"></p>
+        <input id="refNameInput" type="text" placeholder="화면 이름 (선택)" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-2">
+        <label id="refUploadLabel" class="flex items-center justify-center gap-2 w-full py-2 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer text-xs text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span id="refUploadLabelText">화면 추가</span>
+          <input id="refFileInput" type="file" accept="image/*" class="hidden" onchange="uploadRefScreen(this)">
+        </label>
+      </div>
+    </div>
+
+    <!-- GENERATE TAB -->
+    <div id="panel-generate" class="flex flex-1 sidebar-scroll p-4">
+      <div class="w-full">
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">버전 메모 (선택)</label>
+            <input id="versionDesc" type="text" placeholder="예: 로그인 화면 v1" class="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-700 mb-1">기획안 내용 <span class="text-red-500">*</span></label>
+            <textarea id="proposalContent" rows="14" placeholder="화면에 대한 기획안을 입력하세요.
+
+예시:
+- 화면명: 고객 대시보드
+- 목적: 구매내역, 포인트, 배송현황 한눈에 보기
+- 구성:
+  1) 상단: 환영 메시지 + 포인트
+  2) 중단: 최근 주문 목록
+  3) 하단: 배송 추적" class="w-full px-2.5 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+          </div>
+          <p id="generateError" class="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg hidden"></p>
+          <button onclick="generateMockup()" id="generateBtn" class="w-full py-2.5 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">목업 생성하기</button>
+          <p id="refHint" class="text-xs text-indigo-500 text-center hidden"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="panel-history" class="hidden flex-1 sidebar-scroll divide-y divide-slate-100"></div>
+
+    <!-- MEMBERS TAB -->
+    <div id="panel-members" class="hidden flex-1 sidebar-scroll p-4 space-y-4">
+      <div>
+        <h3 class="text-xs font-semibold text-slate-700 mb-2">프로젝트 담당자</h3>
+        <div id="memberList" class="space-y-2"></div>
+      </div>
+      <div class="border-t border-slate-100 pt-3">
+        <h3 class="text-xs font-semibold text-slate-700 mb-2">담당자 추가</h3>
+        <div class="flex gap-2">
+          <select id="addMemberSelect" class="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+            <option value="">사용자 선택...</option>
+          </select>
+          <button onclick="addMember()" class="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">추가</button>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">새 사용자는 헤더 우상단에서 추가할 수 있습니다.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="flex-1 flex flex-col overflow-hidden bg-slate-100 min-w-0">
+    <!-- Toolbar (shown when mockup selected) -->
+    <div id="mockupToolbar" class="hidden bg-white border-b border-slate-200 px-4 py-2 flex items-center gap-3 shrink-0">
+      <span id="mockupVersionBadge" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full"></span>
+      <span id="mockupDescLabel" class="text-sm font-medium text-slate-700"></span>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <button onclick="setViewMode('desktop')" id="btnDesktop" class="px-3 py-1 text-xs rounded-md bg-white text-slate-900 shadow-sm transition-colors">데스크톱</button>
+          <button onclick="setViewMode('mobile')" id="btnMobile" class="px-3 py-1 text-xs rounded-md text-slate-500 transition-colors">모바일</button>
+        </div>
+        <button onclick="downloadHTML()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          HTML
+        </button>
+        <button onclick="toggleRightPanel()" id="rightPanelBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          의견/채팅
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty / Generating / Viewer -->
+    <div id="emptyViewer" class="flex-1 flex items-center justify-center">
+      <div class="text-center max-w-sm">
+        <div class="w-20 h-20 bg-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-slate-700 mb-2">목업 미리보기</h3>
+        <p class="text-sm text-slate-400">왼쪽 '생성' 탭에서 기획안을 입력하거나<br>'히스토리' 탭에서 기존 버전을 선택하세요.</p>
+      </div>
+    </div>
+    <div id="generatingViewer" class="hidden flex-1 flex items-center justify-center">
+      <div class="text-center">
+        <div class="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-slate-600 font-medium">AI가 목업을 생성하고 있습니다...</p>
+        <p id="generatingHint" class="text-slate-400 text-sm mt-1">잠시만 기다려주세요.</p>
+      </div>
+    </div>
+    <div id="mockupViewer" class="hidden flex-1 overflow-auto flex items-start justify-center p-6">
+      <div id="mockupContainer" class="bg-white shadow-xl rounded-lg overflow-hidden w-full max-w-5xl transition-all duration-300" style="min-height:600px">
+        <iframe id="mockupFrame" title="목업 미리보기" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── RIGHT PANEL ── -->
+  <aside id="rightPanel" class="w-80 bg-white border-l border-slate-200 flex flex-col overflow-hidden shrink-0">
+    <div class="flex border-b border-slate-100 shrink-0">
+      <button onclick="switchRightTab('comments')" id="rtab-comments" class="flex-1 py-3 text-xs font-medium text-indigo-600 border-b-2 border-indigo-600 transition-colors">의견</button>
+      <button onclick="switchRightTab('chat')" id="rtab-chat" class="flex-1 py-3 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors">채팅</button>
+    </div>
+
+    <!-- COMMENTS -->
+    <div id="rpanel-comments" class="flex flex-col flex-1 overflow-hidden">
+      <div id="commentList" class="flex-1 overflow-y-auto p-3 space-y-3">
+        <div id="noMockupMsg" class="flex items-center justify-center py-8">
+          <p class="text-xs text-slate-400 text-center">목업 버전을 선택하면<br>의견을 작성할 수 있습니다.</p>
+        </div>
+        <div id="noCommentMsg" class="hidden flex items-center justify-center py-8">
+          <p class="text-xs text-slate-400 text-center">아직 의견이 없습니다.<br>첫 번째 의견을 남겨보세요!</p>
+        </div>
+        <div id="commentItems"></div>
+      </div>
+      <div class="p-3 border-t border-slate-100 shrink-0">
+        <div id="noUserCommentMsg" class="text-xs text-slate-400 text-center py-1">의견을 남기려면 상단에서 사용자를 선택하세요.</div>
+        <div id="commentForm" class="hidden space-y-2">
+          <div class="flex gap-2 items-start">
+            <div id="commentAvatar" class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5" style="background:#6366f1">?</div>
+            <textarea id="commentInput" placeholder="의견을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)" rows="2" class="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+          </div>
+          <button onclick="postComment()" class="w-full py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">의견 남기기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="rpanel-chat" class="hidden flex flex-col flex-1 overflow-hidden">
+      <div id="chatList" class="flex-1 overflow-y-auto p-3 space-y-3"></div>
+      <div class="p-3 border-t border-slate-100 shrink-0">
+        <div id="noUserChatMsg" class="text-xs text-slate-400 text-center py-1">채팅하려면 상단에서 사용자를 선택하세요.</div>
+        <form id="chatForm" class="hidden flex gap-2">
+          <input id="chatInput" type="text" placeholder="메시지 입력..." class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button type="submit" class="p-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ── CONSTANTS ───────────────────────────────────────
+const COLOR_BG = {red:'#ef4444',orange:'#f97316',amber:'#f59e0b',green:'#22c55e',teal:'#14b8a6',cyan:'#06b6d4',blue:'#3b82f6',indigo:'#6366f1',violet:'#8b5cf6',pink:'#ec4899'};
+const COLORS = Object.keys(COLOR_BG);
+const params = new URLSearchParams(location.search);
+const PROJECT_ID = params.get('id');
+
+// ── DB ───────────────────────────────────────────────
+const DB = {
+  get(k, d=[]) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  getProject(id) { return (this.get('mg_projects')).find(p => p.id === id) || null; },
+  getUsers() { return this.get('mg_users'); },
+  addUser(u) { const us=this.getUsers(); us.push(u); this.set('mg_users',us); return u; },
+  getCurrentUser() { return this.get('mg_current_user', null); },
+  setCurrentUser(u) { this.set('mg_current_user', u); },
+  getApiKey() { return localStorage.getItem('mg_api_key')||''; },
+  getRefs(pid) { return this.get(`mg_refs_${pid}`); },
+  setRefs(pid,refs) { this.set(`mg_refs_${pid}`,refs); },
+  getMockups(pid) { return this.get(`mg_mockups_${pid}`); },
+  getMockup(pid,mid) { return this.getMockups(pid).find(m=>m.id===mid)||null; },
+  addMockup(pid,m) { const ms=this.getMockups(pid); ms.unshift(m); this.set(`mg_mockups_${pid}`,ms); },
+  deleteMockup(pid,mid) { this.set(`mg_mockups_${pid}`, this.getMockups(pid).filter(m=>m.id!==mid)); },
+  getMemberIds(pid) { return this.get(`mg_members_${pid}`); },
+  getMembers(pid) { const ids=this.getMemberIds(pid); const users=this.getUsers(); return ids.map(id=>users.find(u=>u.id===id)).filter(Boolean); },
+  addMember(pid,uid) { const ids=this.getMemberIds(pid); if(!ids.includes(uid)){ids.push(uid);this.set(`mg_members_${pid}`,ids);} },
+  removeMember(pid,uid) { this.set(`mg_members_${pid}`,this.getMemberIds(pid).filter(id=>id!==uid)); },
+  getComments(mid) { return this.get(`mg_comments_${mid}`); },
+  addComment(mid,c) { const cs=this.getComments(mid); cs.push(c); this.set(`mg_comments_${mid}`,cs); },
+  deleteComment(mid,cid) { this.set(`mg_comments_${mid}`,this.getComments(mid).filter(c=>c.id!==cid)); },
+  getChat(pid) { return this.get(`mg_chat_${pid}`); },
+  addChat(pid,msg) { const msgs=this.getChat(pid); msgs.push(msg); this.set(`mg_chat_${pid}`,msgs); },
+};
+
+function uid() { return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function avatar(u,size='sm') {
+  const s = size==='sm'?'w-6 h-6 text-[10px]':'w-8 h-8 text-xs';
+  return `<div class="${s} rounded-full flex items-center justify-center font-bold text-white shrink-0" style="background:${COLOR_BG[u.color]||'#6366f1'}">${u.name[0]}</div>`;
+}
+function timeStr(iso) { return new Date(iso).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}); }
+
+// ── STATE ────────────────────────────────────────────
+let selectedMockup = null;
+let rightPanelOpen = true;
+let currentLeftTab = 'generate';
+let currentRightTab = 'comments';
+
+// ── INIT ─────────────────────────────────────────────
+if (!PROJECT_ID) location.href = 'index.html';
+const project = DB.getProject(PROJECT_ID);
+if (!project) location.href = 'index.html';
+document.getElementById('projectTitle').textContent = project.name;
+document.title = `${project.name} - MockupGen`;
+
+updateHeaderUser();
+renderRefScreens();
+renderHistory();
+renderMembers();
+renderChat();
+updateRefHint();
+updateCommentSection();
+updateChatSection();
+
+// ── USER MENU ────────────────────────────────────────
+function toggleUserMenu() {
+  const menu = document.getElementById('userMenu');
+  if (menu.classList.contains('hidden')) { renderUserMenu(); menu.classList.remove('hidden'); }
+  else menu.classList.add('hidden');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#userMenu') && !e.target.closest('[onclick="toggleUserMenu()"]'))
+    document.getElementById('userMenu')?.classList.add('hidden');
+});
+function renderUserMenu() {
+  const users = DB.getUsers();
+  const current = DB.getCurrentUser();
+  const list = document.getElementById('userMenuList');
+  if (!users.length) { list.innerHTML='<p class="text-xs text-slate-400 px-3 py-2">등록된 사용자가 없습니다.</p>'; return; }
+  list.innerHTML = users.map(u=>`
+    <button onclick="selectUser('${u.id}')" class="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-slate-50 text-left ${current?.id===u.id?'bg-indigo-50':''}">
+      <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style="background:${COLOR_BG[u.color]||'#6366f1'}">${u.name[0]}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-medium text-slate-800 truncate">${esc(u.name)}</p>
+        ${u.role&&u.role!=='member'?`<p class="text-[10px] text-slate-400">${esc(u.role)}</p>`:''}
+      </div>
+      ${current?.id===u.id?'<svg class="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>':''}
+    </button>`).join('');
+}
+function selectUser(id) {
+  const u = DB.getUsers().find(u=>u.id===id);
+  if(u){DB.setCurrentUser(u);updateHeaderUser();document.getElementById('userMenu').classList.add('hidden');updateCommentSection();updateChatSection();}
+}
+function updateHeaderUser() {
+  const u = DB.getCurrentUser();
+  const av=document.getElementById('headerAvatar'), nm=document.getElementById('headerUserName');
+  if(u){av.textContent=u.name[0];av.style.background=COLOR_BG[u.color]||'#6366f1';nm.textContent=u.name;nm.className='text-sm text-slate-800 hidden sm:block';}
+  else{av.textContent='?';av.style.background='#cbd5e1';nm.textContent='사용자 선택';nm.className='text-sm text-slate-500 hidden sm:block';}
+}
+function showNewUserForm() {
+  document.getElementById('createUserForm').classList.remove('hidden');
+  document.getElementById('showNewUserFormBtn').classList.add('hidden');
+  document.getElementById('newUserName').focus();
+}
+function hideNewUserForm() {
+  document.getElementById('createUserForm').classList.add('hidden');
+  document.getElementById('showNewUserFormBtn').classList.remove('hidden');
+  document.getElementById('newUserName').value='';
+  document.getElementById('newUserRole').value='';
+}
+function createUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  if(!name) return;
+  const users=DB.getUsers();
+  const u={id:uid(),name,role:document.getElementById('newUserRole').value.trim()||'member',color:COLORS[users.length%COLORS.length]};
+  DB.addUser(u);DB.setCurrentUser(u);
+  updateHeaderUser();hideNewUserForm();
+  document.getElementById('userMenu').classList.add('hidden');
+  updateCommentSection();updateChatSection();renderMemberSelect();
+}
+
+// ── TABS ─────────────────────────────────────────────
+function switchLeftTab(tab) {
+  ['refs','generate','history','members'].forEach(t=>{
+    document.getElementById(`panel-${t}`).classList.toggle('hidden', t!==tab);
+    document.getElementById(`panel-${t}`).classList.toggle('flex', t===tab && (t==='generate'));
+    const btn=document.getElementById(`tab-${t}`);
+    if(t===tab){btn.className='flex-1 py-2.5 text-[11px] font-medium text-indigo-600 border-b-2 border-indigo-600 transition-colors';}
+    else{btn.className='flex-1 py-2.5 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors';}
+  });
+  currentLeftTab = tab;
+  if(tab==='history') renderHistory();
+  if(tab==='members') {renderMembers();renderMemberSelect();}
+}
+function switchRightTab(tab) {
+  ['comments','chat'].forEach(t=>{
+    document.getElementById(`rpanel-${t}`).classList.toggle('hidden', t!==tab);
+    document.getElementById(`rpanel-${t}`).classList.toggle('flex', t===tab);
+    const btn=document.getElementById(`rtab-${t}`);
+    if(t===tab){btn.className='flex-1 py-3 text-xs font-medium text-indigo-600 border-b-2 border-indigo-600 transition-colors';}
+    else{btn.className='flex-1 py-3 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors';}
+  });
+  currentRightTab=tab;
+  if(tab==='chat'){renderChat();scrollChat();}
+  if(tab==='comments')renderComments();
+}
+function toggleRightPanel() {
+  const panel=document.getElementById('rightPanel');
+  const btn=document.getElementById('rightPanelBtn');
+  rightPanelOpen=!rightPanelOpen;
+  panel.classList.toggle('hidden',!rightPanelOpen);
+  btn.textContent=rightPanelOpen?'의견/채팅 닫기':'의견/채팅';
+  if(rightPanelOpen){btn.className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-100 text-indigo-700 transition-colors';}
+  else{btn.className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors';}
+}
+
+// ── REFERENCE SCREENS ────────────────────────────────
+function renderRefScreens() {
+  const refs = DB.getRefs(PROJECT_ID);
+  const grid = document.getElementById('refScreenGrid');
+  grid.innerHTML = refs.map(r=>`
+    <div class="relative group aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+      <img src="${r.data.startsWith('data:')?r.data:`data:${r.mimeType};base64,${r.data}`}" alt="${esc(r.name)}" class="w-full h-full object-cover">
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+        <button onclick="deleteRef('${r.id}')" class="opacity-0 group-hover:opacity-100 p-1 bg-red-500 text-white rounded-full transition-opacity">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-0.5">
+        <p class="text-white text-[10px] truncate">${esc(r.name)}</p>
+      </div>
+    </div>`).join('');
+  const uploadArea = document.getElementById('refUploadArea');
+  uploadArea.classList.toggle('hidden', refs.length >= 3);
+  document.getElementById('refUploadLabelText').textContent = `화면 추가 (${refs.length}/3)`;
+  updateRefHint();
+}
+
+async function uploadRefScreen(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const errEl=document.getElementById('refUploadError');
+  const refs=DB.getRefs(PROJECT_ID);
+  if(refs.length>=3){errEl.textContent='최대 3개까지 등록 가능합니다.';errEl.classList.remove('hidden');return;}
+  if(!file.type.startsWith('image/')){errEl.textContent='이미지 파일만 업로드 가능합니다.';errEl.classList.remove('hidden');return;}
+  if(file.size>5*1024*1024){errEl.textContent='파일 크기는 5MB 이하여야 합니다.';errEl.classList.remove('hidden');return;}
+  errEl.classList.add('hidden');
+  const label=document.getElementById('refUploadLabel');
+  label.innerHTML='<div class="w-3 h-3 border border-indigo-600 border-t-transparent rounded-full animate-spin"></div> 업로드 중...';
+  try {
+    const data = await toBase64(file);
+    const name = document.getElementById('refNameInput').value.trim() || file.name;
+    const ref = {id:uid(), name, data, mimeType:file.type, createdAt:new Date().toISOString()};
+    refs.push(ref); DB.setRefs(PROJECT_ID,refs);
+    document.getElementById('refNameInput').value='';
+    renderRefScreens();
+  } catch(e){errEl.textContent='업로드 실패: '+e.message;errEl.classList.remove('hidden');}
+  finally{
+    label.innerHTML='<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg><span id="refUploadLabelText">화면 추가</span><input id="refFileInput" type="file" accept="image/*" class="hidden" onchange="uploadRefScreen(this)">';
+    input.value='';renderRefScreens();
+  }
+}
+
+function deleteRef(id) {
+  if(!confirm('이 참조 화면을 삭제하시겠습니까?')) return;
+  DB.setRefs(PROJECT_ID, DB.getRefs(PROJECT_ID).filter(r=>r.id!==id));
+  renderRefScreens();
+}
+
+function toBase64(file) {
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      // Strip data URL prefix to get pure base64
+      const result = e.target.result;
+      const base64 = result.split(',')[1];
+      res(base64);
+    };
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function updateRefHint() {
+  const refs=DB.getRefs(PROJECT_ID);
+  const hint=document.getElementById('refHint');
+  if(refs.length>0){hint.textContent=`참조 화면 ${refs.length}개 스타일 반영`;hint.classList.remove('hidden');}
+  else hint.classList.add('hidden');
+}
+
+// ── GENERATE ─────────────────────────────────────────
+async function generateMockup() {
+  const content = document.getElementById('proposalContent').value.trim();
+  const errEl = document.getElementById('generateError');
+  if(!content){errEl.textContent='기획안 내용을 입력해주세요.';errEl.classList.remove('hidden');return;}
+  const apiKey = DB.getApiKey();
+  if(!apiKey){errEl.textContent='API 키가 설정되지 않았습니다. 대시보드에서 API 키를 먼저 설정해주세요.';errEl.classList.remove('hidden');return;}
+  errEl.classList.add('hidden');
+
+  const refs = DB.getRefs(PROJECT_ID);
+  showView('generating');
+  if(refs.length>0) document.getElementById('generatingHint').textContent=`참조 화면 ${refs.length}개의 스타일을 분석 중입니다.`;
+  else document.getElementById('generatingHint').textContent='잠시만 기다려주세요.';
+
+  try {
+    const html = await callAnthropicAPI(content, refs, apiKey);
+    const mockups = DB.getMockups(PROJECT_ID);
+    const version = (mockups.length>0 ? Math.max(...mockups.map(m=>m.version)) : 0) + 1;
+    const desc = document.getElementById('versionDesc').value.trim();
+    const m = {id:uid(), version, proposalContent:content, htmlContent:html, description:desc||null, createdAt:new Date().toISOString()};
+    DB.addMockup(PROJECT_ID, m);
+    document.getElementById('proposalContent').value='';
+    document.getElementById('versionDesc').value='';
+    selectMockup(m);
+    switchLeftTab('history');
+  } catch(e) {
+    showView('empty');
+    errEl.textContent='생성 실패: '+e.message;
+    errEl.classList.remove('hidden');
+    switchLeftTab('generate');
+  }
+}
+
+async function callAnthropicAPI(proposalContent, refScreens, apiKey) {
+  const systemPrompt = `You are an expert UI/UX designer who creates realistic HTML mockup screens.
+Your task is to generate a complete, self-contained HTML mockup based on the provided business proposal.
+Rules:
+- Generate ONLY the HTML content (complete HTML document with <!DOCTYPE html>, <html>, <head>, <body> tags)
+- Use inline CSS styles for all styling (no external stylesheets, no JavaScript)
+- Create a realistic, professional-looking UI
+- Support Korean text naturally
+- Use a clean, modern design aesthetic with proper spacing, colors, and typography
+- Include realistic placeholder data
+- Make it visually appealing
+
+If reference screens are provided as images, analyze their visual style (colors, layout, typography, component design) and apply that style to the new mockup.`;
+
+  const userContent = [];
+  if(refScreens.length>0){
+    userContent.push({type:'text',text:`Here are ${refScreens.length} reference screen(s). Analyze their visual style:`});
+    for(const s of refScreens){
+      userContent.push({type:'image',source:{type:'base64',media_type:s.mimeType,data:s.data}});
+      userContent.push({type:'text',text:`Reference: "${s.name}"`});
+    }
+  }
+  userContent.push({type:'text',text:`Create an HTML mockup for:\n\n${proposalContent}\n\nGenerate a complete HTML document.`});
+
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'content-type':'application/json',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-opus-4-8',
+      max_tokens:8096,
+      system:systemPrompt,
+      messages:[{role:'user',content:userContent}]
+    })
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
+  const data=await res.json();
+  let html=data.content[0].text;
+  const m=html.match(/```html\n?([\s\S]*?)\n?```/);
+  if(m) html=m[1];
+  return html;
+}
+
+// ── MOCKUP VIEWER ────────────────────────────────────
+function showView(mode) {
+  document.getElementById('emptyViewer').classList.toggle('hidden', mode!=='empty');
+  document.getElementById('generatingViewer').classList.toggle('hidden', mode!=='generating');
+  document.getElementById('mockupViewer').classList.toggle('hidden', mode!=='mockup');
+  document.getElementById('mockupToolbar').classList.toggle('hidden', mode!=='mockup');
+}
+
+function selectMockup(m) {
+  selectedMockup = m;
+  document.getElementById('mockupVersionBadge').textContent = `v${m.version}`;
+  document.getElementById('mockupDescLabel').textContent = m.description || '';
+  const frame = document.getElementById('mockupFrame');
+  frame.srcdoc = m.htmlContent;
+  showView('mockup');
+  renderComments();
+  renderHistory();
+}
+
+function setViewMode(mode) {
+  const container = document.getElementById('mockupContainer');
+  const frame = document.getElementById('mockupFrame');
+  const btnD=document.getElementById('btnDesktop'), btnM=document.getElementById('btnMobile');
+  if(mode==='mobile'){
+    container.style.width='390px';container.style.maxWidth='390px';
+    frame.style.height='844px';
+    btnD.className='px-3 py-1 text-xs rounded-md text-slate-500 transition-colors';
+    btnM.className='px-3 py-1 text-xs rounded-md bg-white text-slate-900 shadow-sm transition-colors';
+  } else {
+    container.style.width='';container.style.maxWidth='1280px';
+    frame.style.height='800px';
+    btnD.className='px-3 py-1 text-xs rounded-md bg-white text-slate-900 shadow-sm transition-colors';
+    btnM.className='px-3 py-1 text-xs rounded-md text-slate-500 transition-colors';
+  }
+}
+
+function downloadHTML() {
+  if(!selectedMockup) return;
+  const blob=new Blob([selectedMockup.htmlContent],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`mockup-v${selectedMockup.version}.html`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── HISTORY ──────────────────────────────────────────
+function renderHistory() {
+  const panel = document.getElementById('panel-history');
+  const mockups = DB.getMockups(PROJECT_ID);
+  if(!mockups.length){panel.innerHTML='<p class="p-5 text-center text-xs text-slate-400">아직 생성된 목업이 없습니다.</p>';return;}
+  panel.innerHTML = mockups.map(m=>`
+    <div onclick="selectMockup(DB.getMockup('${PROJECT_ID}','${m.id}'))" class="p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100 ${selectedMockup?.id===m.id?'bg-indigo-50 border-l-2 border-indigo-600':''}">
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-0.5">
+            <span class="text-xs font-bold text-indigo-600">v${m.version}</span>
+            ${m.description?`<span class="text-xs text-slate-700 truncate">${esc(m.description)}</span>`:''}
+          </div>
+          <p class="text-xs text-slate-500 line-clamp-2">${esc(m.proposalContent)}</p>
+          <p class="text-[10px] text-slate-400 mt-1">${new Date(m.createdAt).toLocaleString('ko-KR')}</p>
+        </div>
+        <button onclick="event.stopPropagation();deleteMockup('${m.id}')" class="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>`).join('');
+  document.getElementById(`tab-history`).textContent=`히스토리(${mockups.length})`;
+}
+
+function deleteMockup(mid) {
+  if(!confirm('이 목업 버전을 삭제하시겠습니까?')) return;
+  DB.deleteMockup(PROJECT_ID, mid);
+  if(selectedMockup?.id===mid){selectedMockup=null;showView('empty');}
+  renderHistory();
+}
+
+// ── MEMBERS ──────────────────────────────────────────
+function renderMembers() {
+  const members = DB.getMembers(PROJECT_ID);
+  const list = document.getElementById('memberList');
+  if(!members.length){list.innerHTML='<p class="text-xs text-slate-400">아직 담당자가 없습니다.</p>';return;}
+  list.innerHTML=members.map(u=>`
+    <div class="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg">
+      ${avatar(u)}
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-medium text-slate-800 truncate">${esc(u.name)}</p>
+        ${u.role&&u.role!=='member'?`<p class="text-[10px] text-slate-400">${esc(u.role)}</p>`:''}
+      </div>
+      <button onclick="removeMember('${u.id}')" class="p-1 text-slate-300 hover:text-red-500 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+function renderMemberSelect() {
+  const members=DB.getMembers(PROJECT_ID);
+  const memberIds=members.map(m=>m.id);
+  const available=DB.getUsers().filter(u=>!memberIds.includes(u.id));
+  const sel=document.getElementById('addMemberSelect');
+  sel.innerHTML='<option value="">사용자 선택...</option>'+available.map(u=>`<option value="${u.id}">${esc(u.name)}${u.role&&u.role!=='member'?' ('+esc(u.role)+')':''}</option>`).join('');
+}
+
+function addMember() {
+  const uid=document.getElementById('addMemberSelect').value;
+  if(!uid) return;
+  DB.addMember(PROJECT_ID, uid);
+  renderMembers();renderMemberSelect();
+  document.getElementById('tab-members').textContent=`담당자(${DB.getMemberIds(PROJECT_ID).length})`;
+}
+
+function removeMember(uid) {
+  if(!confirm('이 담당자를 제거하시겠습니까?')) return;
+  DB.removeMember(PROJECT_ID, uid);
+  renderMembers();renderMemberSelect();
+  document.getElementById('tab-members').textContent=`담당자(${DB.getMemberIds(PROJECT_ID).length})`;
+}
+
+// ── COMMENTS ─────────────────────────────────────────
+function updateCommentSection() {
+  const user = DB.getCurrentUser();
+  const noUser = document.getElementById('noUserCommentMsg');
+  const form = document.getElementById('commentForm');
+  if(user){
+    noUser.classList.add('hidden');form.classList.remove('hidden');
+    const av=document.getElementById('commentAvatar');
+    av.textContent=user.name[0];av.style.background=COLOR_BG[user.color]||'#6366f1';
+  } else {noUser.classList.remove('hidden');form.classList.add('hidden');}
+}
+
+function renderComments() {
+  const noMockup=document.getElementById('noMockupMsg');
+  const noComment=document.getElementById('noCommentMsg');
+  const items=document.getElementById('commentItems');
+  if(!selectedMockup){noMockup.classList.remove('hidden');noComment.classList.add('hidden');items.innerHTML='';return;}
+  noMockup.classList.add('hidden');
+  const comments=DB.getComments(selectedMockup.id);
+  const users=DB.getUsers();
+  if(!comments.length){noComment.classList.remove('hidden');items.innerHTML='';return;}
+  noComment.classList.add('hidden');
+  items.innerHTML=comments.map(c=>{
+    const u=users.find(u=>u.id===c.userId)||{name:'?',color:'indigo'};
+    const me=DB.getCurrentUser()?.id===c.userId;
+    return `
+    <div class="flex gap-2.5">
+      ${avatar(u)}
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="text-xs font-semibold text-slate-800">${esc(u.name)}</span>
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] text-slate-400">${timeStr(c.createdAt)}</span>
+            ${me?`<button onclick="deleteComment('${c.id}')" class="p-0.5 text-slate-300 hover:text-red-500 transition-colors"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>`:''}
+          </div>
+        </div>
+        <p class="text-xs text-slate-700 bg-slate-50 rounded-lg px-3 py-2 whitespace-pre-wrap">${esc(c.content)}</p>
+      </div>
+    </div>`;}).join('');
+}
+
+function postComment() {
+  const user=DB.getCurrentUser();
+  const input=document.getElementById('commentInput');
+  const content=input.value.trim();
+  if(!user||!content||!selectedMockup) return;
+  DB.addComment(selectedMockup.id,{id:uid(),userId:user.id,content,createdAt:new Date().toISOString()});
+  input.value='';renderComments();
+}
+
+function deleteComment(cid) {
+  if(!selectedMockup) return;
+  DB.deleteComment(selectedMockup.id,cid);renderComments();
+}
+
+document.getElementById('commentInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();postComment();}});
+
+// ── CHAT ─────────────────────────────────────────────
+function updateChatSection() {
+  const user=DB.getCurrentUser();
+  document.getElementById('noUserChatMsg').classList.toggle('hidden',!!user);
+  document.getElementById('chatForm').classList.toggle('hidden',!user);
+}
+
+function renderChat() {
+  const msgs=DB.getChat(PROJECT_ID);
+  const users=DB.getUsers();
+  const me=DB.getCurrentUser();
+  const list=document.getElementById('chatList');
+  if(!msgs.length){list.innerHTML='<div class="flex items-center justify-center py-8"><p class="text-xs text-slate-400 text-center">채팅을 시작해보세요!</p></div>';return;}
+  list.innerHTML=msgs.map(m=>{
+    const u=users.find(u=>u.id===m.userId)||{name:'?',color:'indigo'};
+    const isMe=me?.id===m.userId;
+    return `
+    <div class="flex gap-2 ${isMe?'flex-row-reverse':''}">
+      ${avatar(u)}
+      <div class="max-w-[75%] flex flex-col gap-0.5 ${isMe?'items-end':'items-start'}">
+        ${!isMe?`<span class="text-[10px] text-slate-500 px-1">${esc(u.name)}</span>`:''}
+        <div class="px-3 py-2 rounded-2xl text-xs ${isMe?'bg-indigo-600 text-white rounded-tr-sm':'bg-slate-100 text-slate-800 rounded-tl-sm'}">${esc(m.content)}</div>
+        <span class="text-[10px] text-slate-400 px-1">${timeStr(m.createdAt)}</span>
+      </div>
+    </div>`;}).join('');
+  scrollChat();
+}
+
+function scrollChat() { const el=document.getElementById('chatList'); el.scrollTop=el.scrollHeight; }
+
+function sendChat(e) {
+  e.preventDefault();
+  const user=DB.getCurrentUser();
+  const input=document.getElementById('chatInput');
+  const content=input.value.trim();
+  if(!user||!content) return;
+  DB.addChat(PROJECT_ID,{id:uid(),userId:user.id,content,createdAt:new Date().toISOString()});
+  input.value='';renderChat();
+}
+
+document.getElementById('chatForm').addEventListener('submit',sendChat);
+
+// ── INIT UI ──────────────────────────────────────────
+showView('empty');
+document.getElementById('panel-generate').classList.remove('hidden');
+document.getElementById('rpanel-comments').classList.remove('hidden');
+
+// Update member tab badge
+const mCount=DB.getMemberIds(PROJECT_ID).length;
+if(mCount>0) document.getElementById('tab-members').textContent=`담당자(${mCount})`;
+const hCount=DB.getMockups(PROJECT_ID).length;
+if(hCount>0) document.getElementById('tab-history').textContent=`히스토리(${hCount})`;
+</script>
+</body>
+</html>
