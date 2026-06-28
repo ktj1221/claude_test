@@ -2,13 +2,24 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>MockupGen - AI 목업 생성 도구</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MockupGen">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif; padding-bottom: env(safe-area-inset-bottom); }
     .backdrop { backdrop-filter: blur(4px); }
   </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
 
@@ -326,8 +337,8 @@ function seedDemoData() {
 
   const mid1 = 'seed-m1', mid2 = 'seed-m2';
   DB.set(`mg_mockups_${pid}`, [
-    { id:mid2, version:2, proposal:'메인 홈화면 2차 기획 - 접근성 및 여백 개선, 지출 분석 위젯 추가, 이중 배너 슬라이드', html:mockupHtml2, createdAt:new Date(Date.now()-86400000).toISOString(), createdBy:u1.id },
-    { id:mid1, version:1, proposal:'메인 홈화면 1차 기획 - 계좌 잔액 카드, 빠른실행 버튼, 최근 거래내역, 하단 탭 네비게이션', html:mockupHtml1, createdAt:new Date(Date.now()-2*86400000).toISOString(), createdBy:u1.id },
+    { id:mid2, version:2, proposalContent:'메인 홈화면 2차 기획 - 접근성 및 여백 개선, 지출 분석 위젯 추가, 이중 배너 슬라이드', htmlContent:mockupHtml2, createdAt:new Date(Date.now()-86400000).toISOString(), createdBy:u1.id },
+    { id:mid1, version:1, proposalContent:'메인 홈화면 1차 기획 - 계좌 잔액 카드, 빠른실행 버튼, 최근 거래내역, 하단 탭 네비게이션', htmlContent:mockupHtml1, createdAt:new Date(Date.now()-2*86400000).toISOString(), createdBy:u1.id },
   ]);
 
   DB.set(`mg_comments_${mid1}`, [
