@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/mockup-generation-tool-b9ldd6
+  workflow_dispatch:
 
 permissions:
   contents: read
