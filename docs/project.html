@@ -532,7 +532,6 @@ async function uploadRefScreen(input) {
     try { DB.setRefs(PROJECT_ID,refs); }
     catch(q){ if(q.name==='QuotaExceededError'||q.code===22){ errEl.textContent='저장 공간이 부족합니다. 기존 참조 화면을 삭제 후 다시 시도하세요.'; errEl.classList.remove('hidden'); return; } throw q; }
     document.getElementById('refNameInput').value='';
-    renderRefScreens();
   } catch(e){errEl.textContent='업로드 실패: '+e.message;errEl.classList.remove('hidden');}
   finally{
     label.innerHTML='<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg><span id="refUploadLabelText">화면 추가</span><input id="refFileInput" type="file" accept="image/*" class="hidden" onchange="uploadRefScreen(this)">';
@@ -814,13 +813,17 @@ function renderComments() {
     </div>`;}).join('');
 }
 
+function scrollComments() { const el=document.getElementById('commentList'); el.scrollTop=el.scrollHeight; }
+
 function postComment() {
   const user=DB.getCurrentUser();
   const input=document.getElementById('commentInput');
   const content=input.value.trim();
-  if(!user||!content||!selectedMockup) return;
+  if(!user){showToast('상단에서 사용자를 먼저 선택하세요.');return;}
+  if(!selectedMockup){showToast('의견을 남길 목업 버전을 선택하세요.');return;}
+  if(!content) return;
   DB.addComment(selectedMockup.id,{id:uid(),userId:user.id,content,createdAt:new Date().toISOString()});
-  input.value='';renderComments();
+  input.value='';renderComments();scrollComments();
 }
 
 function deleteComment(cid) {
@@ -865,7 +868,8 @@ function sendChat(e) {
   const user=DB.getCurrentUser();
   const input=document.getElementById('chatInput');
   const content=input.value.trim();
-  if(!user||!content) return;
+  if(!user){showToast('상단에서 사용자를 먼저 선택하세요.');return;}
+  if(!content) return;
   DB.addChat(PROJECT_ID,{id:uid(),userId:user.id,content,createdAt:new Date().toISOString()});
   input.value='';renderChat();
 }
