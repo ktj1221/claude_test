@@ -205,6 +205,10 @@
           <button onclick="setViewMode('desktop')" id="btnDesktop" class="px-3 py-1 text-xs rounded-md bg-white text-slate-900 shadow-sm transition-colors">데스크톱</button>
           <button onclick="setViewMode('mobile')" id="btnMobile" class="px-3 py-1 text-xs rounded-md text-slate-500 transition-colors">모바일</button>
         </div>
+        <button onclick="generateSpec()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          기획서
+        </button>
         <button onclick="downloadHTML()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           HTML
@@ -288,6 +292,33 @@
       </div>
     </div>
   </aside>
+</div>
+
+<!-- SPEC MODAL -->
+<div id="specModal" class="hidden fixed inset-0 bg-black/60 z-50 flex flex-col">
+  <div class="flex items-center justify-between bg-white px-5 py-3 border-b border-slate-200 shrink-0">
+    <div>
+      <h2 class="font-semibold text-slate-900 text-sm">화면 기획서 생성</h2>
+      <p id="specSubtitle" class="text-xs text-slate-400 mt-0.5"></p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="downloadSpec()" id="specDownloadBtn" style="display:none" class="items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+        <svg class="w-3.5 h-3.5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        HTML 저장
+      </button>
+      <button onclick="closeSpecModal()" class="p-1.5 text-slate-400 hover:text-slate-700 transition-colors">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="flex-1 overflow-hidden bg-slate-100 flex items-center justify-center">
+    <div id="specGenerating" class="flex flex-col items-center gap-3 text-center">
+      <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      <p class="text-slate-700 text-sm font-medium">기획서를 작성하고 있습니다</p>
+      <p id="specLoadingMsg" class="text-slate-400 text-xs">목업 화면을 캡처하고 있습니다...</p>
+    </div>
+    <iframe id="specFrame" style="display:none;width:100%;height:100%;border:none;" sandbox="allow-scripts"></iframe>
+  </div>
 </div>
 
 <!-- Mobile overlay -->
@@ -376,6 +407,7 @@ let selectedMockup = null;
 let rightPanelOpen = true;
 let currentLeftTab = 'generate';
 let currentRightTab = 'comments';
+let specHtmlContent = null;
 
 // ── INIT ─────────────────────────────────────────────
 if (!PROJECT_ID) location.href = 'index.html';
@@ -876,6 +908,156 @@ function sendChat(e) {
 }
 
 document.getElementById('chatForm').addEventListener('submit',sendChat);
+
+// ── SPEC (기획서) ─────────────────────────────────────
+async function loadHtml2Canvas() {
+  if (window.html2canvas) return;
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('화면 캡처 라이브러리 로드 실패'));
+    document.head.appendChild(s);
+  });
+}
+
+async function captureIframe() {
+  await loadHtml2Canvas();
+  const html = selectedMockup.htmlContent;
+  const parser = new DOMParser();
+  const parsed = parser.parseFromString(html, 'text/html');
+
+  const container = document.createElement('div');
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:390px;min-height:700px;background:white;overflow:hidden;pointer-events:none;';
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = Array.from(parsed.querySelectorAll('style')).map(s => s.textContent).join('\n');
+  container.appendChild(styleEl);
+
+  const contentEl = document.createElement('div');
+  contentEl.innerHTML = parsed.body.innerHTML;
+  container.appendChild(contentEl);
+  document.body.appendChild(container);
+
+  await new Promise(r => setTimeout(r, 200));
+  try {
+    const canvas = await html2canvas(container, {
+      useCORS: false, allowTaint: true, logging: false,
+      scale: 1, width: 390, windowWidth: 390,
+    });
+    return canvas.toDataURL('image/png').split(',')[1];
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+
+function openSpecModal(state, subtitle) {
+  const modal = document.getElementById('specModal');
+  const gen = document.getElementById('specGenerating');
+  const frame = document.getElementById('specFrame');
+  const dlBtn = document.getElementById('specDownloadBtn');
+  const sub = document.getElementById('specSubtitle');
+  modal.classList.remove('hidden');
+  if (state === 'generating') {
+    gen.style.display = 'flex'; frame.style.display = 'none'; dlBtn.style.display = 'none';
+    sub.textContent = '생성 중...';
+  } else {
+    gen.style.display = 'none'; frame.style.display = 'block'; dlBtn.style.display = 'flex';
+    sub.textContent = subtitle || '';
+  }
+}
+
+function closeSpecModal() {
+  document.getElementById('specModal').classList.add('hidden');
+  document.getElementById('specFrame').srcdoc = '';
+}
+
+function downloadSpec() {
+  if (!specHtmlContent) return;
+  const blob = new Blob([specHtmlContent], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `기획서-v${selectedMockup?.version||1}.html`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function generateSpec() {
+  if (!selectedMockup) { showToast('목업 버전을 먼저 선택하세요.'); return; }
+  const apiKey = DB.getApiKey();
+  if (!apiKey) { showToast('API 키가 설정되지 않았습니다.'); return; }
+
+  openSpecModal('generating');
+  document.getElementById('specLoadingMsg').textContent = '목업 화면을 캡처하고 있습니다...';
+
+  try {
+    const imageData = await captureIframe();
+    document.getElementById('specLoadingMsg').textContent = 'AI가 기획서를 작성하고 있습니다...';
+
+    const specHtml = await callSpecAPI(selectedMockup.proposalContent, imageData, apiKey);
+    specHtmlContent = specHtml;
+
+    const desc = selectedMockup.description || selectedMockup.proposalContent.slice(0, 30) + '...';
+    openSpecModal('result', `v${selectedMockup.version} — ${desc}`);
+    document.getElementById('specFrame').srcdoc = specHtml;
+  } catch(e) {
+    closeSpecModal();
+    showToast('기획서 생성 실패: ' + e.message);
+  }
+}
+
+async function callSpecAPI(proposalContent, imageData, apiKey) {
+  const system = `You are a professional UI/UX planning document writer for Korean IT companies.
+Generate a complete, well-styled HTML 화면 기획서 (screen planning document) based on the given proposal text and mockup screenshot.
+
+STRICT RULES:
+- Write entirely in Korean
+- Output a complete standalone HTML document (DOCTYPE html head body all included)
+- Use ONLY inline CSS — no external stylesheets
+- Document style: white background, max-width 800px centered, padding 48px, clean professional look
+- Use #4f46e5 (indigo) as accent color for section headings and dividers
+- Include these 7 sections with clear headings:
+  1. 문서 정보 (버전, 작성일, 작성자 테이블)
+  2. 화면 개요
+  3. 기획 배경 및 목적
+  4. 화면 구성 설명 (analyze the mockup screenshot and describe each area)
+  5. 주요 기능 정의 (numbered list)
+  6. UX 고려사항
+  7. 목업 화면 (place this EXACT img tag here — do not alter it):
+     <img src="data:image/png;base64,__MOCKUP__" style="max-width:390px;width:100%;border:1px solid #e2e8f0;border-radius:12px;display:block;margin:20px auto;box-shadow:0 4px 16px rgba(0,0,0,0.08)">
+- The placeholder text __MOCKUP__ must appear exactly as written`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-8',
+      max_tokens: 8096,
+      system,
+      messages: [{role: 'user', content: [
+        {type: 'text', text: `기획안:\n\n${proposalContent}`},
+        {type: 'image', source: {type: 'base64', media_type: 'image/png', data: imageData}},
+        {type: 'text', text: '위 기획안과 목업 화면을 바탕으로 전문적인 화면 기획서 HTML 문서를 작성해주세요. 이미지 태그에 __MOCKUP__ 플레이스홀더를 반드시 정확히 포함하세요.'}
+      ]}]
+    })
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+  const data = await res.json();
+  let html = data.content[0].text;
+  const m = html.match(/```html\n?([\s\S]*?)\n?```/);
+  if (m) html = m[1];
+  if (!html.includes('__MOCKUP__')) {
+    // fallback: append image at end of body if placeholder was missed
+    html = html.replace('</body>', `<div style="text-align:center;padding:32px"><img src="data:image/png;base64,${imageData}" style="max-width:390px;width:100%;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.08)"></div></body>`);
+  } else {
+    html = html.replace('__MOCKUP__', imageData);
+  }
+  return html;
+}
 
 // ── INIT UI ──────────────────────────────────────────
 showView('empty');
