@@ -390,15 +390,24 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 
 // ── DEMO SEED ───────────────────────────────────────
 function seedDemoData() {
-  if (DB.getProjects().length > 0) return;
+  const projects = DB.getProjects();
+  // 두 예시 프로젝트가 이미 존재하면 스킵
+  if (projects.some(p => p.id === 'seed-p1') && projects.some(p => p.id === 'seed-p2')) return;
 
-  const u1 = { id:'seed-u1', name:'김태정', role:'PM', color:'blue' };
-  const u2 = { id:'seed-u2', name:'이수진', role:'UI 디자이너', color:'violet' };
-  const u3 = { id:'seed-u3', name:'박준호', role:'개발팀', color:'green' };
-  DB.set('mg_users', [u1, u2, u3]);
-  DB.setCurrentUser(u1);
+  // 시드 유저 없으면 추가 (기존 유저 유지)
+  const existingUsers = DB.getUsers();
+  const u1 = existingUsers.find(u => u.id === 'seed-u1') || { id:'seed-u1', name:'김태정', role:'PM', color:'blue' };
+  const u2 = existingUsers.find(u => u.id === 'seed-u2') || { id:'seed-u2', name:'이수진', role:'UI 디자이너', color:'violet' };
+  const u3 = existingUsers.find(u => u.id === 'seed-u3') || { id:'seed-u3', name:'박준호', role:'개발팀', color:'green' };
+  const merged = [...existingUsers];
+  if (!merged.find(u => u.id === 'seed-u1')) merged.push(u1);
+  if (!merged.find(u => u.id === 'seed-u2')) merged.push(u2);
+  if (!merged.find(u => u.id === 'seed-u3')) merged.push(u3);
+  DB.set('mg_users', merged);
+  if (!DB.getCurrentUser()) DB.setCurrentUser(u1);
 
   const pid = 'seed-p1';
+  if (!projects.some(p => p.id === pid)) {
   DB.saveProject({ id:pid, name:'농협 올원뱅크 앱 리뉴얼', description:'올원뱅크 모바일 앱 메인 홈화면 및 주요 기능 UX/UI 개선 프로젝트', createdAt: new Date(Date.now()-3*86400000).toISOString() });
   DB.set(`mg_members_${pid}`, ['seed-u1','seed-u2','seed-u3']);
 
@@ -431,9 +440,11 @@ function seedDemoData() {
     { id:'seed-ch5', userId:u2.id, content:'v2 훨씬 낫네요! 이 방향으로 진행해요 👍', createdAt:new Date(Date.now()-24*3600000).toISOString() },
     { id:'seed-ch6', userId:u3.id, content:'개발 일정 조율해서 다음 주 내로 퍼블리싱 시작할 수 있을 것 같습니다.', createdAt:new Date(Date.now()-20*3600000).toISOString() },
   ]);
+  } // end if seed-p1
 
   // ── 2nd seed project: SmartRoom 회의실 예약 앱 ──────
   const pid2 = 'seed-p2';
+  if (!projects.some(p => p.id === pid2)) {
   DB.saveProject({ id:pid2, name:'SmartRoom 회의실 예약 앱', description:'사내 회의실 예약·관리 모바일 앱 신규 개발 UI/UX 기획 및 목업 제작', createdAt: new Date(Date.now()-1*86400000).toISOString() });
   DB.set(`mg_members_${pid2}`, ['seed-u1','seed-u3']);
 
@@ -454,6 +465,7 @@ function seedDemoData() {
     { id:'seed-ch8', userId:u3.id, content:'확인했어요. 기본 틀은 좋은데 예약 확정 후 알림 플로우도 같이 설계하면 좋겠어요.', createdAt:new Date(Date.now()-80000000).toISOString() },
     { id:'seed-ch9', userId:u1.id, content:'맞아요, 알림 화면은 v2에서 추가할게요. 일단 이 방향으로 내부 검토 진행해봐요!', createdAt:new Date(Date.now()-78000000).toISOString() },
   ]);
+  } // end if seed-p2
 }
 
 // ── INIT ─────────────────────────────────────────────

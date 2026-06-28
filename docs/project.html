@@ -392,6 +392,13 @@ updateRefHint();
 updateCommentSection();
 updateChatSection();
 
+// 저장된 목업이 있으면 최신 버전을 자동 선택해서 바로 보여줌
+const _initMockups = DB.getMockups(PROJECT_ID);
+if (_initMockups.length > 0) {
+  selectMockup(_initMockups[0]);
+  switchLeftTab('history');
+}
+
 // ── USER MENU ────────────────────────────────────────
 function toggleUserMenu() {
   const menu = document.getElementById('userMenu');
