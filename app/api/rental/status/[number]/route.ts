@@ -29,8 +29,13 @@ export async function GET(
       return NextResponse.json({ error: '해당 신청을 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // Full details only when phone last-4 matches
+    // Full details only when phone last-4 matches (exact suffix, no LIKE wildcards)
     if (verify) {
+      // Validate: must be exactly 4 digits to prevent wildcard/injection abuse
+      if (!/^\d{4}$/.test(verify)) {
+        return NextResponse.json({ error: '연락처가 일치하지 않습니다.' }, { status: 403 });
+      }
+
       const full = db.prepare(`
         SELECT
           r.request_number, r.requester_name, r.purpose,
@@ -46,8 +51,8 @@ export async function GET(
           e.image_data as equipment_image, e.image_mime as equipment_image_mime
         FROM rental_requests r
         JOIN equipment e ON r.equipment_id = e.id
-        WHERE r.request_number = ? AND r.requester_phone LIKE ?
-      `).get(number, `%${verify}`);
+        WHERE r.request_number = ? AND SUBSTR(r.requester_phone, -4) = ?
+      `).get(number, verify);
 
       if (!full) {
         return NextResponse.json({ error: '연락처가 일치하지 않습니다.' }, { status: 403 });

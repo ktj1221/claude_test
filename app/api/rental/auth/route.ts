@@ -9,17 +9,18 @@ import crypto from 'crypto';
 
 const ADMIN_PASSWORD = process.env.RENTAL_ADMIN_PASSWORD;
 
+// Module-level key so HMAC output is always 32 bytes regardless of input length,
+// making the timingSafeEqual comparison constant-time and safe from truncation.
+const HMAC_KEY = crypto.randomBytes(32);
+
+function hmac(val: string): Buffer {
+  return crypto.createHmac('sha256', HMAC_KEY).update(val, 'utf8').digest();
+}
+
 function checkPassword(input: string): boolean {
   if (!ADMIN_PASSWORD) return false;
-  // Constant-time comparison to prevent timing attacks
   try {
-    const a = Buffer.from(input.padEnd(128).slice(0, 128));
-    const b = Buffer.from(ADMIN_PASSWORD.padEnd(128).slice(0, 128));
-    return (
-      a.length === b.length &&
-      crypto.timingSafeEqual(a, b) &&
-      input === ADMIN_PASSWORD
-    );
+    return crypto.timingSafeEqual(hmac(input), hmac(ADMIN_PASSWORD));
   } catch {
     return false;
   }

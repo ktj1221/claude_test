@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     // Atomic: check availability + insert in one transaction to prevent double-booking
     const id = uuidv4();
-    let requestNumber: string;
+    let requestNumber = '';
 
     const createRequest = db.transaction(() => {
       const equipment = db.prepare(
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         id,
-        requestNumber!,
+        requestNumber,
         equipment_id,
         requester_name.trim(),
         requester_phone.trim(),

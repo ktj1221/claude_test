@@ -109,15 +109,23 @@ export default function AdminRentalPage() {
   const [actionState, setActionState] = useState<{ action: string; note: string; photo: string; photoMime: string } | null>(null);
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [countCache, setCountCache] = useState<Record<string, number>>({});
 
   const fetchRequests = useCallback(async () => {
     try {
       const res = await fetch(`/api/rental/requests?status=${statusFilter}`);
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
       const data = await res.json();
-      setRequests(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setRequests(list);
+      if (statusFilter === 'all') {
+        setCountCache(list.reduce((acc: Record<string, number>, r: RentalRequest) => {
+          acc[r.status] = (acc[r.status] || 0) + 1;
+          return acc;
+        }, {}));
+      }
     } catch {
-      console.error('목록 로드 실패');
+      router.push('/admin/rental/login');
     } finally {
       setLoading(false);
     }
@@ -158,10 +166,10 @@ export default function AdminRentalPage() {
     }
   }
 
-  // Status counts from loaded requests (only valid when filter is 'all')
+  // Use cached counts so badges persist across filter changes
   const statusCounts = statusFilter === 'all'
     ? requests.reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {} as Record<string, number>)
-    : {};
+    : countCache;
 
   return (
     <div className="min-h-screen bg-slate-50">
