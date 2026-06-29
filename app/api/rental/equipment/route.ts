@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb, verifyAdminSession } from '@/lib/rental-db';
+import { MAX_PHOTO_B64_LEN } from '@/lib/constants';
 import { v4 as uuidv4 } from 'uuid';
-
-const MAX_PHOTO_B64_LEN = Math.ceil((5 * 1024 * 1024) * 4 / 3); // 5 MB → base64 length
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('rental_admin_token')?.value;

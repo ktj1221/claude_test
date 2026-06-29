@@ -109,9 +109,11 @@ export default function AdminRentalPage() {
   const [actionState, setActionState] = useState<{ action: string; note: string; photo: string; photoMime: string } | null>(null);
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [fetchError, setFetchError] = useState('');
   const [countCache, setCountCache] = useState<Record<string, number>>({});
 
   const fetchRequests = useCallback(async () => {
+    setFetchError('');
     try {
       const res = await fetch(`/api/rental/requests?status=${statusFilter}`);
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
@@ -125,7 +127,7 @@ export default function AdminRentalPage() {
         }, {}));
       }
     } catch {
-      router.push('/admin/rental/login');
+      setFetchError('목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -218,6 +220,13 @@ export default function AdminRentalPage() {
             </button>
           ))}
         </div>
+
+        {fetchError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm text-red-700">{fetchError}</p>
+            <button onClick={fetchRequests} className="text-xs text-red-600 font-medium underline shrink-0">다시 시도</button>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-2">
