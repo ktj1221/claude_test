@@ -408,7 +408,7 @@ export default function RentalPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">신청 사진</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">신청 사진 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                   <div
                     onClick={() => fileRef.current?.click()}
                     className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-400 active:border-indigo-600 transition-colors"
@@ -438,7 +438,7 @@ export default function RentalPage() {
                     onChange={handlePhotoChange}
                   />
                   {photo && (
-                    <button type="button" onClick={() => setPhoto(null)} className="text-xs text-red-500 mt-1.5 hover:underline">
+                    <button type="button" onClick={() => setPhoto(null)} className="text-xs text-red-500 mt-1.5 py-1 hover:underline">
                       사진 제거
                     </button>
                   )}
