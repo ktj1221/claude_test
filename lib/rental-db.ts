@@ -118,7 +118,8 @@ export function getRentalDb() {
 
 export function generateRequestNumber(): string {
   const db = getRentalDb();
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  // Use Korean local date so the number prefix matches the admin's calendar day
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }).replace(/-/g, '');
 
   // Atomic increment — single statement, no TOCTOU race
   const row = db.prepare(`
