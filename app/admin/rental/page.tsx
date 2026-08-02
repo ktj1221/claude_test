@@ -75,6 +75,15 @@ function formatRentalDate(d: string | null) {
   return `${y}.${m}.${day}`;
 }
 
+function getDDayBadge(endDate: string, today: string, status: string): { text: string; cls: string } | null {
+  if (status !== 'approved' && status !== 'returned') return null;
+  const diffDays = Math.round((new Date(endDate).getTime() - new Date(today).getTime()) / 86400000);
+  if (diffDays < 0) return null; // overdue badge handled separately
+  if (diffDays === 0) return { text: 'D-day', cls: 'bg-orange-100 text-orange-700' };
+  if (diffDays <= 3) return { text: `D-${diffDays}`, cls: 'bg-yellow-100 text-yellow-700' };
+  return null;
+}
+
 function PhotoUpload({ label, onChange, onRemove }: { label: string; onChange: (data: string, mime: string) => void; onRemove?: () => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -505,6 +514,10 @@ export default function AdminRentalPage() {
                       {req.rental_end_date && req.rental_end_date < todaySeoul && (req.status === 'approved' || req.status === 'returned') && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
                       )}
+                      {req.rental_end_date && (() => {
+                        const badge = getDDayBadge(req.rental_end_date, todaySeoul, req.status);
+                        return badge ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.text}</span> : null;
+                      })()}
                       {req.equipment_category && (
                         <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md">{req.equipment_category}</span>
                       )}
@@ -560,6 +573,10 @@ export default function AdminRentalPage() {
                     {selected.rental_end_date && selected.rental_end_date < todaySeoul && (selected.status === 'approved' || selected.status === 'returned') && (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
                     )}
+                    {selected.rental_end_date && (() => {
+                      const badge = getDDayBadge(selected.rental_end_date, todaySeoul, selected.status);
+                      return badge ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.text}</span> : null;
+                    })()}
                     {filteredRequests.length > 1 && (
                       <div className="flex items-center gap-0.5 ml-1">
                         <button
