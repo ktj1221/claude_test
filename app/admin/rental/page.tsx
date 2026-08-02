@@ -150,17 +150,31 @@ export default function AdminRentalPage() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return;
-      if (actionState && !processing) {
-        setActionState(null);
-        setActionError('');
-      } else if (selected && !processing) {
-        setSelected(null);
+      if (e.key === 'Escape') {
+        if (actionState && !processing) {
+          setActionState(null);
+          setActionError('');
+        } else if (selected && !processing) {
+          setSelected(null);
+        }
+        return;
+      }
+      // Arrow key navigation between list items when detail panel is open
+      if (selected && !actionState && !processing && !detailLoading) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const idx = filteredRequests.findIndex(r => r.id === selected.id);
+          if (idx < filteredRequests.length - 1) selectRequest(filteredRequests[idx + 1]);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const idx = filteredRequests.findIndex(r => r.id === selected.id);
+          if (idx > 0) selectRequest(filteredRequests[idx - 1]);
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selected, actionState, processing]);
+  }, [selected, actionState, processing, detailLoading, filteredRequests]);
 
   const fetchRequests = useCallback(async (silent = false) => {
     setFetchError('');
@@ -498,33 +512,69 @@ export default function AdminRentalPage() {
             onClick={e => e.stopPropagation()}
           >
             {/* Panel header */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-              <div className="min-w-0">
-                <p className="font-mono text-xs text-slate-400">{selected.request_number}</p>
-                <h2 className="font-bold text-slate-900 truncate">{selected.equipment_name}</h2>
-                {selected.equipment_category && (
-                  <p className="text-xs text-slate-400 truncate">{selected.equipment_category}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 ml-3 shrink-0 flex-wrap justify-end">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
-                  {STATUS_CONFIG[selected.status]?.label}
-                </span>
-                {selected.rental_end_date && selected.rental_end_date < todaySeoul && (selected.status === 'approved' || selected.status === 'returned') && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
-                )}
-                <button
-                  onClick={() => { if (!processing) { setSelected(null); setActionState(null); } }}
-                  aria-label="닫기"
-                  disabled={processing}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-40"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const selectedIndex = filteredRequests.findIndex(r => r.id === selected.id);
+              const hasPrev = selectedIndex > 0;
+              const hasNext = selectedIndex < filteredRequests.length - 1;
+              return (
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-xs text-slate-400">{selected.request_number}</p>
+                    <h2 className="font-bold text-slate-900 truncate">{selected.equipment_name}</h2>
+                    {selected.equipment_category && (
+                      <p className="text-xs text-slate-400 truncate">{selected.equipment_category}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
+                      {STATUS_CONFIG[selected.status]?.label}
+                    </span>
+                    {selected.rental_end_date && selected.rental_end_date < todaySeoul && (selected.status === 'approved' || selected.status === 'returned') && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
+                    )}
+                    {filteredRequests.length > 1 && (
+                      <div className="flex items-center gap-0.5 ml-1">
+                        <button
+                          onClick={() => hasPrev && selectRequest(filteredRequests[selectedIndex - 1])}
+                          disabled={!hasPrev || processing || detailLoading}
+                          aria-label="이전 신청"
+                          title="이전 (←)"
+                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-30"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        <span className="text-xs text-slate-400 tabular-nums min-w-[36px] text-center">
+                          {selectedIndex + 1}/{filteredRequests.length}
+                        </span>
+                        <button
+                          onClick={() => hasNext && selectRequest(filteredRequests[selectedIndex + 1])}
+                          disabled={!hasNext || processing || detailLoading}
+                          aria-label="다음 신청"
+                          title="다음 (→)"
+                          className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-30"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { if (!processing) { setSelected(null); setActionState(null); } }}
+                      aria-label="닫기"
+                      disabled={processing}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-40"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 relative">
