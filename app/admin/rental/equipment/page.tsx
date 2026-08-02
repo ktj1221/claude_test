@@ -53,6 +53,17 @@ export default function AdminEquipmentPage() {
   // Single fetch — 401 redirects to login, no redundant auth check
   useEffect(() => { fetchEquipment(); }, [fetchEquipment]);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (deleteConfirm) { setDeleteConfirm(null); }
+        else if (showForm && !saving) { setShowForm(false); }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [deleteConfirm, showForm, saving]);
+
   function openAdd() {
     setEditTarget(null);
     setForm(EMPTY_FORM);

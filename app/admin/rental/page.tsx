@@ -543,7 +543,8 @@ export default function AdminRentalPage() {
                         <button
                           key={action}
                           onClick={() => { setActionState({ action, note: '', photo: '', photoMime: '' }); setActionError(''); }}
-                          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors min-h-[48px] ${
+                          disabled={detailLoading}
+                          className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors min-h-[48px] disabled:opacity-50 ${
                             action === 'reject'
                               ? 'bg-red-50 text-red-700 hover:bg-red-100'
                               : 'bg-indigo-600 text-white hover:bg-indigo-700'

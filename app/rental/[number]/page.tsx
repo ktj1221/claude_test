@@ -343,6 +343,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     onChange={e => setPhoneInput(e.target.value)}
                     placeholder="연락처 뒷 4자리"
                     maxLength={13}
+                    autoFocus
                     style={{ fontSize: '16px' }}
                     className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest"
                   />
