@@ -246,16 +246,22 @@ export default function RentalPage() {
                   <button
                     key={eq.id}
                     onClick={() => setSelected(eq)}
-                    className="group bg-white rounded-xl p-4 border border-slate-200 hover:border-indigo-400 hover:shadow-md active:scale-[0.99] transition-all text-left"
+                    className="group bg-white rounded-xl overflow-hidden border border-slate-200 hover:border-indigo-400 hover:shadow-md active:scale-[0.99] transition-all text-left"
                   >
-                    {eq.image_data && (
+                    {eq.image_data ? (
                       <img
                         src={`data:${eq.image_mime};base64,${eq.image_data}`}
                         alt={eq.name}
-                        className="w-full h-32 sm:h-36 object-cover rounded-lg mb-3"
+                        className="w-full h-32 sm:h-36 object-cover"
                       />
+                    ) : (
+                      <div className="w-full h-32 sm:h-36 bg-slate-100 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
                     )}
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2 p-4 pt-3">
                       <div className="min-w-0">
                         <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 truncate">{eq.name}</h3>
                         {eq.category && <p className="text-xs text-slate-400 mt-0.5">{eq.category}</p>}
