@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
 
     const equipment = db.prepare(query).all();
     return NextResponse.json(equipment);
-  } catch {
+  } catch (e) {
+    console.error('[rental/equipment GET]', e);
     return NextResponse.json({ error: '장비 목록을 불러올 수 없습니다.' }, { status: 500 });
   }
 }
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
 
     const equipment = db.prepare('SELECT * FROM equipment WHERE id = ?').get(id);
     return NextResponse.json(equipment, { status: 201 });
-  } catch {
+  } catch (e) {
+    console.error('[rental/equipment POST]', e);
     return NextResponse.json({ error: '장비 추가에 실패했습니다.' }, { status: 500 });
   }
 }

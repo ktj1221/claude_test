@@ -25,7 +25,8 @@ export async function GET(
       return NextResponse.json({ error: '대여 신청을 찾을 수 없습니다.' }, { status: 404 });
     }
     return NextResponse.json(request);
-  } catch {
+  } catch (e) {
+    console.error('[rental/requests/[id] GET]', e);
     return NextResponse.json({ error: '대여 신청 정보를 불러올 수 없습니다.' }, { status: 500 });
   }
 }
@@ -160,7 +161,8 @@ export async function PATCH(
     `).get(id);
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (e) {
+    console.error('[rental/requests/[id] PATCH]', e);
     return NextResponse.json({ error: '상태 변경에 실패했습니다.' }, { status: 500 });
   }
 }

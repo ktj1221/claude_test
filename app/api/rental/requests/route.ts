@@ -64,7 +64,8 @@ export async function GET(req: NextRequest) {
 
     const requests = db.prepare(query).all(...params);
     return NextResponse.json(requests);
-  } catch {
+  } catch (e) {
+    console.error('[rental/requests GET]', e);
     return NextResponse.json({ error: '대여 신청 목록을 불러올 수 없습니다.' }, { status: 500 });
   }
 }
@@ -192,7 +193,8 @@ export async function POST(req: NextRequest) {
     `).get(id);
 
     return NextResponse.json(request, { status: 201 });
-  } catch {
+  } catch (e) {
+    console.error('[rental/requests POST]', e);
     return NextResponse.json({ error: '대여 신청에 실패했습니다.' }, { status: 500 });
   }
 }

@@ -97,7 +97,8 @@ export async function GET(
     }
 
     return NextResponse.json({ ...basic, verified: false });
-  } catch {
+  } catch (e) {
+    console.error('[rental/status/[number] GET]', e);
     return NextResponse.json({ error: '대여 현황을 불러올 수 없습니다.' }, { status: 500 });
   }
 }

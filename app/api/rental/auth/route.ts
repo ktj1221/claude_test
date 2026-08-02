@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
       path: '/',
     });
     return res;
-  } catch {
+  } catch (e) {
+    console.error('[rental/auth POST]', e);
     return NextResponse.json({ error: '로그인에 실패했습니다.' }, { status: 500 });
   }
 }

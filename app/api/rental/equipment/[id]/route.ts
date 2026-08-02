@@ -19,7 +19,8 @@ export async function GET(
       return NextResponse.json({ error: '장비를 찾을 수 없습니다.' }, { status: 404 });
     }
     return NextResponse.json(equipment);
-  } catch {
+  } catch (e) {
+    console.error('[rental/equipment/[id] GET]', e);
     return NextResponse.json({ error: '장비 정보를 불러올 수 없습니다.' }, { status: 500 });
   }
 }
@@ -97,7 +98,8 @@ export async function PUT(
 
     const equipment = db.prepare('SELECT * FROM equipment WHERE id = ?').get(id);
     return NextResponse.json(equipment);
-  } catch {
+  } catch (e) {
+    console.error('[rental/equipment/[id] PUT]', e);
     return NextResponse.json({ error: '장비 수정에 실패했습니다.' }, { status: 500 });
   }
 }
@@ -148,7 +150,8 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (e) {
+    console.error('[rental/equipment/[id] DELETE]', e);
     return NextResponse.json({ error: '장비 삭제에 실패했습니다.' }, { status: 500 });
   }
 }
