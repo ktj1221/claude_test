@@ -304,9 +304,19 @@ export default function AdminRentalPage() {
         r.equipment_name.toLowerCase().includes(q) ||
         r.request_number.toLowerCase().includes(q) ||
         r.requester_phone.includes(q) ||
+        r.purpose.toLowerCase().includes(q) ||
         (r.requester_email && r.requester_email.toLowerCase().includes(q))
       )
     : requests;
+
+  // Reflect pending count in the browser tab so admins notice new requests
+  useEffect(() => {
+    const count = statusCounts.pending || 0;
+    document.title = count > 0
+      ? `(${count}) 대여 관리 · 아이디어 그라운드`
+      : '대여 관리 · 아이디어 그라운드';
+    return () => { document.title = '아이디어 그라운드'; };
+  }, [statusCounts]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -469,6 +479,7 @@ export default function AdminRentalPage() {
                       </span>
                     )}
                   </div>
+                  <p className="text-xs text-slate-400 mt-1 truncate leading-relaxed">{req.purpose}</p>
                 </button>
               );
             })}
