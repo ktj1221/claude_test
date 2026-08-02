@@ -433,12 +433,12 @@ export default function AdminRentalPage() {
                 ))}
                 <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
                   <p className="text-xs text-slate-400 mb-0.5">사용 목적</p>
-                  <p className="text-slate-800 text-sm">{selected.purpose}</p>
+                  <p className="text-slate-800 text-sm break-words">{selected.purpose}</p>
                 </div>
                 {selected.requester_notes && (
                   <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
                     <p className="text-xs text-slate-400 mb-0.5">신청자 메모</p>
-                    <p className="text-slate-700 text-sm">{selected.requester_notes}</p>
+                    <p className="text-slate-700 text-sm break-words">{selected.requester_notes}</p>
                   </div>
                 )}
               </div>
@@ -453,7 +453,7 @@ export default function AdminRentalPage() {
               {selected.approved_at && (
                 <div className="p-3 bg-blue-50 rounded-xl">
                   <p className="text-xs text-blue-500 font-medium mb-1">승인 — {formatDate(selected.approved_at)}</p>
-                  {selected.approval_notes && <p className="text-sm text-blue-800 mb-2">{selected.approval_notes}</p>}
+                  {selected.approval_notes && <p className="text-sm text-blue-800 mb-2 break-words">{selected.approval_notes}</p>}
                   {selected.approval_photo && <img src={`data:${selected.approval_photo_mime};base64,${selected.approval_photo}`} alt="승인 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
@@ -461,7 +461,7 @@ export default function AdminRentalPage() {
               {selected.returned_at && (
                 <div className="p-3 bg-purple-50 rounded-xl">
                   <p className="text-xs text-purple-500 font-medium mb-1">반납 — {formatDate(selected.returned_at)}</p>
-                  {selected.return_notes && <p className="text-sm text-purple-800 mb-2">{selected.return_notes}</p>}
+                  {selected.return_notes && <p className="text-sm text-purple-800 mb-2 break-words">{selected.return_notes}</p>}
                   {selected.return_photo && <img src={`data:${selected.return_photo_mime};base64,${selected.return_photo}`} alt="반납 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
@@ -469,7 +469,7 @@ export default function AdminRentalPage() {
               {selected.completed_at && (
                 <div className="p-3 bg-green-50 rounded-xl">
                   <p className="text-xs text-green-500 font-medium mb-1">반납 승인 — {formatDate(selected.completed_at)}</p>
-                  {selected.completion_notes && <p className="text-sm text-green-800 mb-2">{selected.completion_notes}</p>}
+                  {selected.completion_notes && <p className="text-sm text-green-800 mb-2 break-words">{selected.completion_notes}</p>}
                   {selected.completion_photo && <img src={`data:${selected.completion_photo_mime};base64,${selected.completion_photo}`} alt="완료 사진" className="max-h-36 rounded-lg object-contain w-full bg-white" />}
                 </div>
               )}
@@ -477,7 +477,7 @@ export default function AdminRentalPage() {
               {selected.rejected_at && (
                 <div className="p-3 bg-red-50 rounded-xl">
                   <p className="text-xs text-red-500 font-medium mb-1">거절 — {formatDate(selected.rejected_at)}</p>
-                  {selected.rejection_notes && <p className="text-sm text-red-800">{selected.rejection_notes}</p>}
+                  {selected.rejection_notes && <p className="text-sm text-red-800 break-words">{selected.rejection_notes}</p>}
                 </div>
               )}
 
@@ -519,6 +519,7 @@ export default function AdminRentalPage() {
                           onChange={e => setActionState(s => s ? { ...s, note: e.target.value } : s)}
                           placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모'}
                           rows={2}
+                          maxLength={500}
                           style={{ fontSize: '16px' }}
                           className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${
                             actionState.action === 'reject' && !actionState.note.trim()

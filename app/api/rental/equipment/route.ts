@@ -37,6 +37,12 @@ export async function POST(req: NextRequest) {
     if (!name?.trim()) {
       return NextResponse.json({ error: '장비 이름을 입력해주세요.' }, { status: 400 });
     }
+    if (name.trim().length > 100) {
+      return NextResponse.json({ error: '장비 이름은 100자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (description && description.trim().length > 1000) {
+      return NextResponse.json({ error: '설명은 1000자 이하여야 합니다.' }, { status: 400 });
+    }
 
     if (image_data && image_data.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '이미지 크기는 5MB 이하여야 합니다.' }, { status: 400 });

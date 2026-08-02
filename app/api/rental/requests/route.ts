@@ -69,6 +69,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '필수 항목을 모두 입력해주세요.' }, { status: 400 });
     }
 
+    if (requester_name.trim().length > 100) {
+      return NextResponse.json({ error: '이름은 100자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (requester_phone.trim().length > 20) {
+      return NextResponse.json({ error: '연락처는 20자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (requester_email && requester_email.trim().length > 200) {
+      return NextResponse.json({ error: '이메일은 200자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (purpose.trim().length > 1000) {
+      return NextResponse.json({ error: '사용 목적은 1000자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (requester_notes && requester_notes.trim().length > 500) {
+      return NextResponse.json({ error: '메모는 500자 이하여야 합니다.' }, { status: 400 });
+    }
+
     // Server-side photo size guard
     if (request_photo && request_photo.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });

@@ -308,6 +308,7 @@ export default function RentalPage() {
                       value={form.requester_name}
                       onChange={e => setForm(f => ({ ...f, requester_name: e.target.value }))}
                       placeholder="홍길동"
+                      maxLength={100}
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -321,6 +322,7 @@ export default function RentalPage() {
                       value={form.requester_phone}
                       onChange={e => setForm(f => ({ ...f, requester_phone: e.target.value }))}
                       placeholder="010-0000-0000"
+                      maxLength={20}
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -348,6 +350,7 @@ export default function RentalPage() {
                     onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
                     placeholder="장비 사용 목적을 간략히 설명해주세요."
                     rows={3}
+                    maxLength={1000}
                     style={{ fontSize: '16px' }}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   />
@@ -421,6 +424,7 @@ export default function RentalPage() {
                     onChange={e => setForm(f => ({ ...f, requester_notes: e.target.value }))}
                     placeholder="추가 전달 사항"
                     rows={2}
+                    maxLength={500}
                     style={{ fontSize: '16px' }}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                   />

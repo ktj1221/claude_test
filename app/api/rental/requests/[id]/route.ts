@@ -47,6 +47,10 @@ export async function PATCH(
     const body = await req.json();
     const { action, note, photo, photo_mime } = body;
 
+    if (note && note.length > 500) {
+      return NextResponse.json({ error: '메모는 500자 이하여야 합니다.' }, { status: 400 });
+    }
+
     if (photo && photo.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
