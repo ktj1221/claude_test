@@ -13,6 +13,23 @@ const ADMIN_PASSWORD = process.env.RENTAL_ADMIN_PASSWORD;
 // making the timingSafeEqual comparison constant-time and safe from truncation.
 const HMAC_KEY = crypto.randomBytes(32);
 
+// Simple in-memory rate limit: max 5 login attempts per IP per 15 minutes
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkLoginRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const WINDOW_MS = 15 * 60 * 1000;
+  const MAX_ATTEMPTS = 5;
+  const entry = loginAttempts.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= MAX_ATTEMPTS) return false;
+  entry.count++;
+  return true;
+}
+
 function hmac(val: string): Buffer {
   return crypto.createHmac('sha256', HMAC_KEY).update(val, 'utf8').digest();
 }
@@ -32,6 +49,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'RENTAL_ADMIN_PASSWORD 환경변수가 설정되지 않았습니다.' },
         { status: 500 }
+      );
+    }
+
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    if (!checkLoginRateLimit(ip)) {
+      return NextResponse.json(
+        { error: '잠시 후 다시 시도해주세요. (15분간 5회 제한)' },
+        { status: 429 }
       );
     }
 

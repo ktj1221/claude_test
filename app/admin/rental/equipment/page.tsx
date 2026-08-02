@@ -276,6 +276,7 @@ export default function AdminEquipmentPage() {
                   value={form.category}
                   onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
                   placeholder="예: 카메라, 노트북, 마이크"
+                  maxLength={50}
                   style={{ fontSize: '16px' }}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -301,6 +302,7 @@ export default function AdminEquipmentPage() {
                   value={form.serial_number}
                   onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))}
                   placeholder="장비 시리얼 번호"
+                  maxLength={100}
                   style={{ fontSize: '16px' }}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />

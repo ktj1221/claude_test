@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Equipment {
@@ -15,6 +16,7 @@ interface Equipment {
 }
 
 export default function RentalPage() {
+  const router = useRouter();
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Equipment | null>(null);
@@ -189,7 +191,7 @@ export default function RentalPage() {
             <p className="text-xs text-slate-400 hidden sm:block">장비 대여 신청</p>
           </div>
           <form
-            onSubmit={(e) => { e.preventDefault(); if (searchNumber.trim()) window.location.href = `/rental/${encodeURIComponent(searchNumber.trim())}`; }}
+            onSubmit={(e) => { e.preventDefault(); if (searchNumber.trim()) router.push(`/rental/${encodeURIComponent(searchNumber.trim())}`); }}
             className="flex gap-2 flex-1 max-w-xs sm:max-w-sm"
           >
             <input

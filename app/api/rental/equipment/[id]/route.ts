@@ -42,6 +42,12 @@ export async function PUT(
     if (description && description.trim().length > 1000) {
       return NextResponse.json({ error: '설명은 1000자 이하여야 합니다.' }, { status: 400 });
     }
+    if (category && category.trim().length > 50) {
+      return NextResponse.json({ error: '카테고리는 50자 이하여야 합니다.' }, { status: 400 });
+    }
+    if (serial_number && serial_number.trim().length > 100) {
+      return NextResponse.json({ error: '시리얼 번호는 100자 이하여야 합니다.' }, { status: 400 });
+    }
 
     if (image_data && image_data.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '이미지 크기는 5MB 이하여야 합니다.' }, { status: 400 });

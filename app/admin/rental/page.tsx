@@ -533,10 +533,12 @@ export default function AdminRentalPage() {
                         {ACTION_CONFIG[selected.status].label[actionState.action]}
                       </h4>
 
-                      <PhotoUpload
-                        label="사진 (선택)"
-                        onChange={(data, mime) => setActionState(s => s ? { ...s, photo: data, photoMime: mime } : s)}
-                      />
+                      {actionState.action !== 'reject' && (
+                        <PhotoUpload
+                          label="사진 (선택)"
+                          onChange={(data, mime) => setActionState(s => s ? { ...s, photo: data, photoMime: mime } : s)}
+                        />
+                      )}
 
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
