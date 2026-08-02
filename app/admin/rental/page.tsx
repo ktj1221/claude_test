@@ -395,7 +395,7 @@ export default function AdminRentalPage() {
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
                         {STATUS_CONFIG[req.status]?.label}
                       </span>
-                      {req.rental_end_date && req.rental_end_date < new Date().toISOString().slice(0, 10) && (req.status === 'approved' || req.status === 'returned') && (
+                      {req.rental_end_date && req.rental_end_date < new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) && (req.status === 'approved' || req.status === 'returned') && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
                       )}
                       {req.equipment_category && (

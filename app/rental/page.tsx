@@ -38,7 +38,7 @@ export default function RentalPage() {
   const [equipError, setEquipError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
   const fetchEquipment = useCallback(async () => {
     setEquipError(false);
