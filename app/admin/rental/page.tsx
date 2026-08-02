@@ -151,16 +151,16 @@ export default function AdminRentalPage() {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return;
-      if (actionState) {
+      if (actionState && !processing) {
         setActionState(null);
         setActionError('');
-      } else if (selected) {
+      } else if (selected && !processing) {
         setSelected(null);
       }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [selected, actionState]);
+  }, [selected, actionState, processing]);
 
   const fetchRequests = useCallback(async () => {
     setFetchError('');
@@ -668,7 +668,8 @@ export default function AdminRentalPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setActionState(null); setActionError(''); }}
-                          className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 min-h-[48px]"
+                          disabled={processing}
+                          className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 disabled:opacity-50 min-h-[48px]"
                         >
                           취소
                         </button>
