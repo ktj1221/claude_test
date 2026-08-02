@@ -77,7 +77,7 @@ export async function PATCH(
             status = 'approved', approval_notes = ?,
             approval_photo = ?, approval_photo_mime = ?, approved_at = ?
           WHERE id = ?
-        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+        `).run(note?.trim() || null, photo || null, photo_mime || 'image/jpeg', now, id);
 
         db.prepare('UPDATE equipment SET is_available = 0 WHERE id = ?').run(existing.equip_id);
 
@@ -98,7 +98,7 @@ export async function PATCH(
           UPDATE rental_requests SET
             status = 'rejected', rejection_notes = ?, rejected_at = ?
           WHERE id = ?
-        `).run(note || null, now, id);
+        `).run(note?.trim() || null, now, id);
 
       } else if (action === 'mark_returned') {
         if (existing.status !== 'approved') {
@@ -109,7 +109,7 @@ export async function PATCH(
             status = 'returned', return_notes = ?,
             return_photo = ?, return_photo_mime = ?, returned_at = ?
           WHERE id = ?
-        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+        `).run(note?.trim() || null, photo || null, photo_mime || 'image/jpeg', now, id);
 
       } else if (action === 'complete') {
         if (existing.status !== 'returned') {
@@ -120,7 +120,7 @@ export async function PATCH(
             status = 'completed', completion_notes = ?,
             completion_photo = ?, completion_photo_mime = ?, completed_at = ?
           WHERE id = ?
-        `).run(note || null, photo || null, photo_mime || 'image/jpeg', now, id);
+        `).run(note?.trim() || null, photo || null, photo_mime || 'image/jpeg', now, id);
 
         db.prepare('UPDATE equipment SET is_available = 1 WHERE id = ?').run(existing.equip_id);
 

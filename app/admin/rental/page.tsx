@@ -144,6 +144,7 @@ export default function AdminRentalPage() {
   const [countCache, setCountCache] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
   const [copiedNum, setCopiedNum] = useState('');
+  const [copiedContact, setCopiedContact] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -211,6 +212,20 @@ export default function AdminRentalPage() {
       setSelected(data);
       setActionState(null);
       fetchRequests();
+      // Keep badge counts fresh when filtered to a specific status
+      if (statusFilter !== 'all') {
+        fetch('/api/rental/requests?status=all')
+          .then(r => r.ok ? r.json() : [])
+          .then(list => {
+            if (Array.isArray(list)) {
+              setCountCache(list.reduce((acc: Record<string, number>, r: RentalRequest) => {
+                acc[r.status] = (acc[r.status] || 0) + 1;
+                return acc;
+              }, {}));
+            }
+          })
+          .catch(() => {});
+      }
     } catch {
       setActionError('네트워크 오류가 발생했습니다.');
     } finally {
@@ -222,6 +237,7 @@ export default function AdminRentalPage() {
     setSelected(req);
     setActionState(null);
     setActionError('');
+    setCopiedContact('');
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/rental/requests/${req.id}`);
@@ -246,6 +262,15 @@ export default function AdminRentalPage() {
       setTimeout(() => setCopiedNum(''), 2000);
     }).catch(() => {});
   }
+
+  function copyContact(value: string, key: string) {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedContact(key);
+      setTimeout(() => setCopiedContact(''), 2000);
+    }).catch(() => {});
+  }
+
+  const todaySeoul = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
   // Use cached counts so badges persist across filter changes
   const statusCounts = statusFilter === 'all'
@@ -396,7 +421,7 @@ export default function AdminRentalPage() {
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
                         {STATUS_CONFIG[req.status]?.label}
                       </span>
-                      {req.rental_end_date && req.rental_end_date < new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) && (req.status === 'approved' || req.status === 'returned') && (
+                      {req.rental_end_date && req.rental_end_date < todaySeoul && (req.status === 'approved' || req.status === 'returned') && (
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
                       )}
                       {req.equipment_category && (
@@ -464,16 +489,40 @@ export default function AdminRentalPage() {
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-xs text-slate-400 mb-0.5">연락처</p>
-                  <a href={`tel:${selected.requester_phone}`} className="font-medium text-indigo-600 text-sm hover:underline break-all">
-                    {selected.requester_phone}
-                  </a>
+                  <div className="flex items-center gap-1.5">
+                    <a href={`tel:${selected.requester_phone}`} className="font-medium text-indigo-600 text-sm hover:underline break-all flex-1">
+                      {selected.requester_phone}
+                    </a>
+                    <button
+                      onClick={() => copyContact(selected.requester_phone, 'phone')}
+                      aria-label="연락처 복사"
+                      className={`shrink-0 p-1 rounded transition-colors ${copiedContact === 'phone' ? 'text-green-600' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                      {copiedContact === 'phone'
+                        ? <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      }
+                    </button>
+                  </div>
                 </div>
                 {selected.requester_email && (
                   <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
                     <p className="text-xs text-slate-400 mb-0.5">이메일</p>
-                    <a href={`mailto:${selected.requester_email}`} className="font-medium text-indigo-600 text-sm hover:underline break-all">
-                      {selected.requester_email}
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      <a href={`mailto:${selected.requester_email}`} className="font-medium text-indigo-600 text-sm hover:underline break-all flex-1">
+                        {selected.requester_email}
+                      </a>
+                      <button
+                        onClick={() => copyContact(selected.requester_email!, 'email')}
+                        aria-label="이메일 복사"
+                        className={`shrink-0 p-1 rounded transition-colors ${copiedContact === 'email' ? 'text-green-600' : 'text-slate-400 hover:text-slate-600'}`}
+                      >
+                        {copiedContact === 'email'
+                          ? <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        }
+                      </button>
+                    </div>
                   </div>
                 )}
                 {[

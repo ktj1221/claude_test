@@ -57,6 +57,10 @@ export default function RentalPage() {
 
   useEffect(() => { fetchEquipment(); }, [fetchEquipment]);
 
+  useEffect(() => {
+    if (selected) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selected]);
+
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
