@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 
+function formatRentalDate(d: string | null) {
+  if (!d) return null;
+  const [y, m, day] = d.split('-');
+  return `${y}.${m}.${day}`;
+}
+
 interface RentalBasic {
   request_number: string;
   status: string;
@@ -77,6 +83,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
   const [phoneInput, setPhoneInput] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const fetchStatus = useCallback(async (verify?: string) => {
     try {
@@ -119,6 +126,13 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
     setVerifying(true);
     setVerifyError('');
     await fetchStatus(last4);
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   const steps = [
@@ -176,9 +190,26 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                   <p className="text-xs text-slate-400 mb-1">신청 번호</p>
                   <p className="text-lg sm:text-xl font-bold text-indigo-600 tracking-wider">{data.request_number}</p>
                 </div>
-                <span className={`text-sm font-semibold px-3 py-1 rounded-full ${STATUS_CONFIG[data.status]?.bg} ${STATUS_CONFIG[data.status]?.color}`}>
-                  {STATUS_CONFIG[data.status]?.label}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={copyLink}
+                    title="링크 복사"
+                    className={`p-1.5 rounded-lg border transition-all ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                  >
+                    {copied ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
+                  <span className={`text-sm font-semibold px-3 py-1 rounded-full ${STATUS_CONFIG[data.status]?.bg} ${STATUS_CONFIG[data.status]?.color}`}>
+                    {STATUS_CONFIG[data.status]?.label}
+                  </span>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
@@ -273,13 +304,13 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     {full.rental_start_date && (
                       <div>
                         <p className="text-xs text-slate-400 mb-0.5">대여 시작</p>
-                        <p className="text-slate-700">{full.rental_start_date}</p>
+                        <p className="text-slate-700">{formatRentalDate(full.rental_start_date)}</p>
                       </div>
                     )}
                     {full.rental_end_date && (
                       <div>
                         <p className="text-xs text-slate-400 mb-0.5">반납 예정</p>
-                        <p className="text-slate-700">{full.rental_end_date}</p>
+                        <p className="text-slate-700">{formatRentalDate(full.rental_end_date)}</p>
                       </div>
                     )}
                   </div>

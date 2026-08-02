@@ -32,16 +32,20 @@ export default function RentalPage() {
   const [error, setError] = useState('');
   const [result, setResult] = useState<{ request_number: string } | null>(null);
   const [searchNumber, setSearchNumber] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [equipError, setEquipError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchEquipment = useCallback(async () => {
+    setEquipError(false);
+    setLoading(true);
     try {
       const res = await fetch('/api/rental/equipment?available=true');
-      if (!res.ok) { setLoading(false); return; }
+      if (!res.ok) { setEquipError(true); return; }
       const data = await res.json();
       setEquipment(Array.isArray(data) ? data : []);
     } catch {
-      console.error('장비 목록 로드 실패');
+      setEquipError(true);
     } finally {
       setLoading(false);
     }
@@ -72,6 +76,10 @@ export default function RentalPage() {
 
     if (!form.requester_name.trim() || !form.requester_phone.trim() || !form.purpose.trim()) {
       setError('이름, 연락처, 사용 목적은 필수 입력 항목입니다.');
+      return;
+    }
+    if (form.rental_start_date && form.rental_end_date && form.rental_end_date < form.rental_start_date) {
+      setError('반납 예정일은 대여 시작일 이후여야 합니다.');
       return;
     }
 
@@ -107,6 +115,10 @@ export default function RentalPage() {
   }
 
   if (result) {
+    const statusUrl = typeof window !== 'undefined' ? `${window.location.origin}/rental/${result.request_number}` : `/rental/${result.request_number}`;
+    function copyLink() {
+      navigator.clipboard.writeText(statusUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    }
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 max-w-md w-full text-center">
@@ -116,12 +128,34 @@ export default function RentalPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">신청 완료!</h2>
-          <p className="text-slate-500 mb-6 text-sm">관리자 승인 후 이용 가능합니다.</p>
-          <div className="bg-slate-50 rounded-xl p-4 mb-6">
+          <p className="text-slate-500 mb-5 text-sm">관리자 승인 후 이용 가능합니다.</p>
+          <div className="bg-slate-50 rounded-xl p-4 mb-4">
             <p className="text-xs text-slate-400 mb-1">신청 번호</p>
             <p className="text-2xl font-bold text-indigo-600 tracking-wider">{result.request_number}</p>
-            <p className="text-xs text-slate-400 mt-2">이 번호로 현황을 확인할 수 있습니다</p>
           </div>
+          {/* Copy status URL */}
+          <button
+            onClick={copyLink}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-4 border rounded-xl text-sm font-medium transition-all ${
+              copied ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                링크가 복사됐습니다
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                현황 링크 복사
+              </>
+            )}
+          </button>
           <div className="space-y-3">
             <Link
               href={`/rental/${result.request_number}`}
@@ -181,12 +215,21 @@ export default function RentalPage() {
                   <div key={i} className="bg-white rounded-xl border border-slate-200 animate-pulse h-36 sm:h-44" />
                 ))}
               </div>
+            ) : equipError ? (
+              <div className="text-center py-20 text-slate-400">
+                <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p className="font-medium text-slate-500 mb-3">목록을 불러오지 못했습니다.</p>
+                <button onClick={fetchEquipment} className="text-sm text-indigo-600 font-medium underline">다시 시도</button>
+              </div>
             ) : equipment.length === 0 ? (
               <div className="text-center py-20 text-slate-400">
                 <svg className="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
                 <p className="font-medium">현재 대여 가능한 장비가 없습니다.</p>
+                <p className="text-sm mt-1">잠시 후 다시 확인해주세요.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

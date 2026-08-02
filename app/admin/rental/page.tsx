@@ -59,6 +59,12 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
+function formatRentalDate(d: string | null) {
+  if (!d) return null;
+  const [y, m, day] = d.split('-');
+  return `${y.slice(2)}.${m}.${day}`;
+}
+
 function PhotoUpload({ label, onChange }: { label: string; onChange: (data: string, mime: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -111,6 +117,8 @@ export default function AdminRentalPage() {
   const [actionError, setActionError] = useState('');
   const [fetchError, setFetchError] = useState('');
   const [countCache, setCountCache] = useState<Record<string, number>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copiedNum, setCopiedNum] = useState('');
 
   const fetchRequests = useCallback(async () => {
     setFetchError('');
@@ -173,10 +181,27 @@ export default function AdminRentalPage() {
     }
   }
 
+  function copyStatusUrl(num: string) {
+    const url = `${window.location.origin}/rental/${num}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedNum(num);
+      setTimeout(() => setCopiedNum(''), 2000);
+    });
+  }
+
   // Use cached counts so badges persist across filter changes
   const statusCounts = statusFilter === 'all'
     ? requests.reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {} as Record<string, number>)
     : countCache;
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredRequests = q
+    ? requests.filter(r =>
+        r.requester_name.toLowerCase().includes(q) ||
+        r.equipment_name.toLowerCase().includes(q) ||
+        r.request_number.toLowerCase().includes(q)
+      )
+    : requests;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -226,6 +251,21 @@ export default function AdminRentalPage() {
           ))}
         </div>
 
+        {/* Search bar */}
+        <div className="relative mb-4">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="신청자 · 장비명 · 신청번호 검색"
+            style={{ fontSize: '16px' }}
+            className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
         {fetchError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
             <p className="text-sm text-red-700">{fetchError}</p>
@@ -237,36 +277,51 @@ export default function AdminRentalPage() {
           <div className="space-y-2">
             {[1, 2, 3].map(i => <div key={i} className="bg-white rounded-xl p-4 border border-slate-200 h-20 animate-pulse" />)}
           </div>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
-            <p>대여 신청이 없습니다.</p>
+            <svg className="w-10 h-10 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p className="font-medium text-slate-500">{q ? '검색 결과가 없습니다.' : '대여 신청이 없습니다.'}</p>
+            {q && <p className="text-xs mt-1">다른 검색어를 입력해 보세요.</p>}
           </div>
         ) : (
           <div className="space-y-2">
-            {requests.map(req => (
-              <button
-                key={req.id}
-                onClick={() => { setSelected(req); setActionState(null); setActionError(''); }}
-                className={`w-full bg-white rounded-xl p-3.5 sm:p-4 border text-left transition-all hover:shadow-md active:scale-[0.99] ${
-                  selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
-                      {STATUS_CONFIG[req.status]?.label}
-                    </span>
-                    <span className="font-mono text-xs text-slate-400">{req.request_number}</span>
+            {filteredRequests.map(req => {
+              const startDate = formatRentalDate(req.rental_start_date);
+              const endDate = formatRentalDate(req.rental_end_date);
+              return (
+                <button
+                  key={req.id}
+                  onClick={() => { setSelected(req); setActionState(null); setActionError(''); }}
+                  className={`w-full bg-white rounded-xl p-3.5 sm:p-4 border text-left transition-all hover:shadow-md active:scale-[0.99] ${
+                    selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
+                        {STATUS_CONFIG[req.status]?.label}
+                      </span>
+                      {req.equipment_category && (
+                        <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md">{req.equipment_category}</span>
+                      )}
+                      <span className="font-mono text-xs text-slate-400">{req.request_number}</span>
+                    </div>
+                    <span className="text-xs text-slate-400 shrink-0 ml-2">{formatDate(req.created_at)}</span>
                   </div>
-                  <span className="text-xs text-slate-400 shrink-0 ml-2">{formatDate(req.created_at)}</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                  <span className="font-semibold text-slate-800 text-sm">{req.equipment_name}</span>
-                  <span className="text-sm text-slate-500">{req.requester_name}</span>
-                  <span className="text-sm text-slate-400 truncate hidden sm:block">{req.purpose}</span>
-                </div>
-              </button>
-            ))}
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <span className="font-semibold text-slate-800 text-sm">{req.equipment_name}</span>
+                    <span className="text-sm text-slate-500">{req.requester_name}</span>
+                    {startDate && (
+                      <span className="text-xs text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">
+                        {startDate}{endDate ? ` ~ ${endDate}` : ''}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -300,8 +355,9 @@ export default function AdminRentalPage() {
                   { label: '신청자', value: selected.requester_name },
                   { label: '연락처', value: selected.requester_phone },
                   ...(selected.requester_email ? [{ label: '이메일', value: selected.requester_email }] : []),
-                  ...(selected.rental_start_date ? [{ label: '대여 시작', value: selected.rental_start_date }] : []),
-                  ...(selected.rental_end_date ? [{ label: '반납 예정', value: selected.rental_end_date }] : []),
+                  ...(selected.rental_start_date ? [{ label: '대여 시작', value: formatRentalDate(selected.rental_start_date) ?? selected.rental_start_date }] : []),
+                  ...(selected.rental_end_date ? [{ label: '반납 예정', value: formatRentalDate(selected.rental_end_date) ?? selected.rental_end_date }] : []),
+                  ...(selected.equipment_category ? [{ label: '카테고리', value: selected.equipment_category }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} className="p-3 bg-slate-50 rounded-xl">
                     <p className="text-xs text-slate-400 mb-0.5">{label}</p>
@@ -388,15 +444,24 @@ export default function AdminRentalPage() {
                       />
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">메모 (선택)</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          메모{actionState.action === 'reject' ? ' (필수)' : ' (선택)'}
+                        </label>
                         <textarea
                           value={actionState.note}
                           onChange={e => setActionState(s => s ? { ...s, note: e.target.value } : s)}
                           placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모'}
                           rows={2}
                           style={{ fontSize: '16px' }}
-                          className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${
+                            actionState.action === 'reject' && !actionState.note.trim()
+                              ? 'border-orange-300 bg-orange-50'
+                              : 'border-slate-200'
+                          }`}
                         />
+                        {actionState.action === 'reject' && !actionState.note.trim() && (
+                          <p className="text-xs text-orange-600 mt-1">거절 사유를 입력하면 신청자에게 도움이 됩니다.</p>
+                        )}
                       </div>
 
                       {actionError && <p className="text-sm text-red-600">{actionError}</p>}
@@ -425,10 +490,34 @@ export default function AdminRentalPage() {
                 </div>
               )}
 
-              <div className="pt-1 border-t border-slate-100">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                 <a href={`/rental/${selected.request_number}`} target="_blank" className="text-xs text-indigo-500 hover:underline">
-                  현황 페이지 링크 열기 →
+                  현황 페이지 열기 →
                 </a>
+                <button
+                  onClick={() => copyStatusUrl(selected.request_number)}
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-all ${
+                    copiedNum === selected.request_number
+                      ? 'bg-green-50 border-green-200 text-green-700'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  {copiedNum === selected.request_number ? (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      복사됨
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      링크 복사
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
