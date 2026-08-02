@@ -101,14 +101,23 @@ export async function DELETE(
     const { id } = await params;
     const db = getRentalDb();
 
-    const activeRentals = db.prepare(`
+    const activeRental = db.prepare(`
       SELECT id FROM rental_requests
       WHERE equipment_id = ? AND status IN ('pending', 'approved', 'returned')
+      LIMIT 1
     `).get(id);
 
-    if (activeRentals) {
+    if (activeRental) {
       return NextResponse.json(
         { error: '진행 중인 대여가 있는 장비는 삭제할 수 없습니다.' },
+        { status: 400 }
+      );
+    }
+
+    const anyRental = db.prepare('SELECT id FROM rental_requests WHERE equipment_id = ? LIMIT 1').get(id);
+    if (anyRental) {
+      return NextResponse.json(
+        { error: '대여 이력이 있는 장비는 삭제할 수 없습니다.' },
         { status: 400 }
       );
     }
