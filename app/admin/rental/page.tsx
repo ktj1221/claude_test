@@ -243,7 +243,7 @@ export default function AdminRentalPage() {
     navigator.clipboard.writeText(url).then(() => {
       setCopiedNum(num);
       setTimeout(() => setCopiedNum(''), 2000);
-    });
+    }).catch(() => {});
   }
 
   // Use cached counts so badges persist across filter changes

@@ -138,7 +138,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
     navigator.clipboard.writeText(window.location.href).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(() => {});
   }
 
   async function handleRefresh() {

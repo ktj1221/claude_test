@@ -125,7 +125,7 @@ export default function RentalPage() {
   if (result) {
     const statusUrl = typeof window !== 'undefined' ? `${window.location.origin}/rental/${result.request_number}` : `/rental/${result.request_number}`;
     function copyLink() {
-      navigator.clipboard.writeText(statusUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+      navigator.clipboard.writeText(statusUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
     }
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
