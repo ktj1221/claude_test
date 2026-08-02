@@ -240,7 +240,7 @@ export default function AdminRentalPage() {
             </nav>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Link href="/rental" target="_blank" className="text-xs text-slate-400 hover:text-slate-600 hidden sm:block">
+            <Link href="/rental" target="_blank" rel="noopener noreferrer" className="text-xs text-slate-400 hover:text-slate-600 hidden sm:block">
               신청 페이지 →
             </Link>
             <button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 transition-colors py-1">
@@ -559,7 +559,7 @@ export default function AdminRentalPage() {
               )}
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                <a href={`/rental/${selected.request_number}`} target="_blank" className="text-xs text-indigo-500 hover:underline">
+                <a href={`/rental/${selected.request_number}`} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline">
                   현황 페이지 열기 →
                 </a>
                 <button

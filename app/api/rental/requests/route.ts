@@ -78,6 +78,9 @@ export async function POST(req: NextRequest) {
     if (requester_email && requester_email.trim().length > 200) {
       return NextResponse.json({ error: '이메일은 200자 이하여야 합니다.' }, { status: 400 });
     }
+    if (requester_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requester_email.trim())) {
+      return NextResponse.json({ error: '이메일 형식이 올바르지 않습니다.' }, { status: 400 });
+    }
     if (purpose.trim().length > 1000) {
       return NextResponse.json({ error: '사용 목적은 1000자 이하여야 합니다.' }, { status: 400 });
     }

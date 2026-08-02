@@ -357,12 +357,12 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 mb-0.5">사용 목적</p>
-                    <p className="text-sm text-slate-800">{full.purpose}</p>
+                    <p className="text-sm text-slate-800 break-words">{full.purpose}</p>
                   </div>
                   {full.requester_notes && (
                     <div>
                       <p className="text-xs text-slate-400 mb-0.5">메모</p>
-                      <p className="text-sm text-slate-700">{full.requester_notes}</p>
+                      <p className="text-sm text-slate-700 break-words">{full.requester_notes}</p>
                     </div>
                   )}
                   <PhotoBlock label="신청 사진" data={full.request_photo} mime={full.request_photo_mime} />
@@ -375,27 +375,27 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     {full.rejected_at && (
                       <div className="p-3 bg-red-50 rounded-xl">
                         <p className="text-xs text-red-500 font-medium mb-1">거절 — {formatDate(full.rejected_at)}</p>
-                        {full.rejection_notes && <p className="text-sm text-red-800">{full.rejection_notes}</p>}
+                        {full.rejection_notes && <p className="text-sm text-red-800 break-words">{full.rejection_notes}</p>}
                       </div>
                     )}
                     {full.approved_at && (
                       <div className="p-3 bg-blue-50 rounded-xl">
                         <p className="text-xs text-blue-500 font-medium mb-1">승인 — {formatDate(full.approved_at)}</p>
-                        {full.approval_notes && <p className="text-sm text-blue-800 mb-2">{full.approval_notes}</p>}
+                        {full.approval_notes && <p className="text-sm text-blue-800 mb-2 break-words">{full.approval_notes}</p>}
                         <PhotoBlock label="승인 사진" data={full.approval_photo} mime={full.approval_photo_mime} />
                       </div>
                     )}
                     {full.returned_at && (
                       <div className="p-3 bg-purple-50 rounded-xl">
                         <p className="text-xs text-purple-500 font-medium mb-1">반납 완료 — {formatDate(full.returned_at)}</p>
-                        {full.return_notes && <p className="text-sm text-purple-800 mb-2">{full.return_notes}</p>}
+                        {full.return_notes && <p className="text-sm text-purple-800 mb-2 break-words">{full.return_notes}</p>}
                         <PhotoBlock label="반납 사진" data={full.return_photo} mime={full.return_photo_mime} />
                       </div>
                     )}
                     {full.completed_at && (
                       <div className="p-3 bg-green-50 rounded-xl">
                         <p className="text-xs text-green-500 font-medium mb-1">반납 승인 — {formatDate(full.completed_at)}</p>
-                        {full.completion_notes && <p className="text-sm text-green-800 mb-2">{full.completion_notes}</p>}
+                        {full.completion_notes && <p className="text-sm text-green-800 mb-2 break-words">{full.completion_notes}</p>}
                         <PhotoBlock label="완료 사진" data={full.completion_photo} mime={full.completion_photo_mime} />
                       </div>
                     )}
