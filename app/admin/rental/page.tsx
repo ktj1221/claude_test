@@ -215,7 +215,9 @@ export default function AdminRentalPage() {
       const res = await fetch(`/api/rental/requests/${req.id}`);
       if (res.ok) {
         setSelected(await res.json());
-      } else if (res.status !== 401) {
+      } else if (res.status === 401) {
+        router.push('/admin/rental/login');
+      } else {
         setActionError('상세 정보를 불러오지 못했습니다. 기본 정보만 표시됩니다.');
       }
     } catch {

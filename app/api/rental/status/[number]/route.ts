@@ -10,6 +10,14 @@ function checkRateLimit(ip: string, reqNumber: string): boolean {
   const now = Date.now();
   const WINDOW_MS = 15 * 60 * 1000;
   const MAX_ATTEMPTS = 10;
+
+  // Opportunistic cleanup to prevent unbounded map growth
+  if (verifyAttempts.size > 2000) {
+    for (const [k, v] of verifyAttempts) {
+      if (now >= v.resetAt) verifyAttempts.delete(k);
+    }
+  }
+
   const entry = verifyAttempts.get(key);
   if (!entry || now >= entry.resetAt) {
     verifyAttempts.set(key, { count: 1, resetAt: now + WINDOW_MS });

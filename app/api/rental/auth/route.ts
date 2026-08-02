@@ -20,6 +20,14 @@ function checkLoginRateLimit(ip: string): boolean {
   const now = Date.now();
   const WINDOW_MS = 15 * 60 * 1000;
   const MAX_ATTEMPTS = 5;
+
+  // Opportunistic cleanup to prevent unbounded map growth
+  if (loginAttempts.size > 500) {
+    for (const [k, v] of loginAttempts) {
+      if (now >= v.resetAt) loginAttempts.delete(k);
+    }
+  }
+
   const entry = loginAttempts.get(ip);
   if (!entry || now >= entry.resetAt) {
     loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
