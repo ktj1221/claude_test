@@ -146,6 +146,7 @@ export default function AdminRentalPage() {
   const [copiedNum, setCopiedNum] = useState('');
   const [copiedContact, setCopiedContact] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
+  const currentDetailId = useRef<string>('');
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -243,8 +244,11 @@ export default function AdminRentalPage() {
     setActionError('');
     setCopiedContact('');
     setDetailLoading(true);
+    currentDetailId.current = req.id;
+    const myId = req.id;
     try {
       const res = await fetch(`/api/rental/requests/${req.id}`);
+      if (currentDetailId.current !== myId) return;
       if (res.ok) {
         setSelected(await res.json());
       } else if (res.status === 401) {
@@ -253,9 +257,10 @@ export default function AdminRentalPage() {
         setActionError('상세 정보를 불러오지 못했습니다. 기본 정보만 표시됩니다.');
       }
     } catch {
+      if (currentDetailId.current !== myId) return;
       setActionError('네트워크 오류로 상세 정보를 불러오지 못했습니다.');
     } finally {
-      setDetailLoading(false);
+      if (currentDetailId.current === myId) setDetailLoading(false);
     }
   }
 
