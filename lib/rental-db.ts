@@ -129,8 +129,13 @@ export function createAdminSession(): string {
   return token;
 }
 
+let verifyCallCount = 0;
 export function verifyAdminSession(token: string): boolean {
   const db = getRentalDb();
+  // Opportunistic cleanup every 100 verifications to keep the sessions table small
+  if (++verifyCallCount % 100 === 0) {
+    db.prepare("DELETE FROM admin_sessions WHERE expires_at <= datetime('now')").run();
+  }
   const session = db.prepare(
     "SELECT id FROM admin_sessions WHERE token = ? AND expires_at > datetime('now')"
   ).get(token) as { id: string } | undefined;
@@ -176,7 +181,6 @@ export interface RentalRequest {
   completion_photo_mime: string;
   status: RentalStatus;
   requester_notes: string | null;
-  admin_notes: string | null;
   approval_notes: string | null;
   rejection_notes: string | null;
   return_notes: string | null;

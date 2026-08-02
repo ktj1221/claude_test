@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     let query = `
       SELECT r.id, r.request_number, r.equipment_id, r.requester_name, r.requester_phone,
              r.requester_email, r.purpose, r.rental_start_date, r.rental_end_date,
-             r.status, r.requester_notes, r.admin_notes,
+             r.status, r.requester_notes,
              r.approval_notes, r.rejection_notes, r.return_notes, r.completion_notes,
              r.approved_at, r.returned_at, r.completed_at, r.rejected_at, r.created_at,
              e.name as equipment_name, e.category as equipment_category

@@ -69,8 +69,7 @@ export default function RentalPage() {
     reader.readAsDataURL(file);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submitForm() {
     if (!selected) return;
     setError('');
 
@@ -103,6 +102,11 @@ export default function RentalPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    submitForm();
   }
 
   function resetForm() {
@@ -439,7 +443,7 @@ export default function RentalPage() {
             <div className="fixed bottom-0 left-0 right-0 sm:hidden bg-white border-t border-slate-200 p-4 z-20">
               {error && <p className="text-sm text-red-600 mb-3 text-center">{error}</p>}
               <button
-                onClick={handleSubmit}
+                onClick={submitForm}
                 disabled={submitting}
                 className="w-full py-4 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-60 transition-colors text-base"
               >
