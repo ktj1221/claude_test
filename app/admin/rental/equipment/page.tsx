@@ -157,8 +157,9 @@ export default function AdminEquipmentPage() {
       <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 sm:gap-6 min-w-0">
-            <h1 className="text-sm sm:text-base font-bold text-slate-900 hidden sm:block">아이디어 그라운드 장비 관리</h1>
-            <h1 className="text-sm font-bold text-slate-900 sm:hidden">장비 관리</h1>
+            <h1 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+              <span className="hidden sm:inline">아이디어 그라운드 </span>장비 관리
+            </h1>
             <nav className="flex items-center gap-1">
               <Link href="/admin/rental" className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 text-xs sm:text-sm rounded-lg transition-colors">
                 대여
