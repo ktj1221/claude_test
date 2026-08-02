@@ -313,6 +313,41 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
               </div>
             )}
 
+            {/* Processing timestamps — visible before verification when actions have happened */}
+            {!data.verified && (data.approved_at || data.rejected_at || data.returned_at || data.completed_at) && (
+              <div className="bg-white rounded-2xl border border-slate-200 px-5 py-4 space-y-2">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">처리 이력</p>
+                {data.approved_at && (
+                  <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                    <span>승인</span>
+                    <span className="text-xs text-slate-400 ml-auto">{formatDate(data.approved_at)}</span>
+                  </div>
+                )}
+                {data.returned_at && (
+                  <div className="flex items-center gap-2 text-sm text-purple-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+                    <span>반납 완료</span>
+                    <span className="text-xs text-slate-400 ml-auto">{formatDate(data.returned_at)}</span>
+                  </div>
+                )}
+                {data.completed_at && (
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                    <span>반납 승인</span>
+                    <span className="text-xs text-slate-400 ml-auto">{formatDate(data.completed_at)}</span>
+                  </div>
+                )}
+                {data.rejected_at && (
+                  <div className="flex items-center gap-2 text-sm text-red-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                    <span>거절/취소</span>
+                    <span className="text-xs text-slate-400 ml-auto">{formatDate(data.rejected_at)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Rejection notice — visible before verification */}
             {data.status === 'rejected' && !data.verified && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-5">

@@ -457,9 +457,9 @@ export default function AdminRentalPage() {
                   <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span className="font-semibold text-slate-800 text-sm">{req.equipment_name}</span>
                     <span className="text-sm text-slate-500">{req.requester_name}</span>
-                    {startDate && (
+                    {(startDate || endDate) && (
                       <span className="text-xs text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">
-                        {startDate}{endDate ? ` ~ ${endDate}` : ''}
+                        {[startDate, endDate].filter(Boolean).join(' ~ ')}
                       </span>
                     )}
                   </div>
