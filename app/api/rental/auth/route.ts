@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!ADMIN_PASSWORD) {
       return NextResponse.json(
-        { error: 'RENTAL_ADMIN_PASSWORD 환경변수가 설정되지 않았습니다.' },
+        { error: '서버 설정 오류가 발생했습니다.' },
         { status: 500 }
       );
     }

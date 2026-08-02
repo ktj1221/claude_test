@@ -39,7 +39,6 @@ export function initRentalSchema() {
       completion_photo_mime TEXT DEFAULT 'image/jpeg',
       status TEXT NOT NULL DEFAULT 'pending',
       requester_notes TEXT,
-      admin_notes TEXT,
       approval_notes TEXT,
       rejection_notes TEXT,
       return_notes TEXT,
