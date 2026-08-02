@@ -66,6 +66,18 @@ export async function PUT(
       return NextResponse.json({ error: '장비를 찾을 수 없습니다.' }, { status: 404 });
     }
 
+    // Prevent manually restoring availability while an active rental is in progress
+    const newAvailable = is_available !== undefined ? (is_available ? 1 : 0) : 1;
+    if (newAvailable === 1) {
+      const activeRental = db.prepare(`
+        SELECT id FROM rental_requests
+        WHERE equipment_id = ? AND status IN ('approved', 'returned') LIMIT 1
+      `).get(id);
+      if (activeRental) {
+        return NextResponse.json({ error: '진행 중인 대여가 있어 대여 가능으로 변경할 수 없습니다.' }, { status: 400 });
+      }
+    }
+
     db.prepare(`
       UPDATE equipment SET
         name = ?, description = ?, category = ?, serial_number = ?,
@@ -78,7 +90,7 @@ export async function PUT(
       serial_number?.trim() || null,
       image_data !== undefined ? image_data : null,
       image_mime || 'image/jpeg',
-      is_available !== undefined ? (is_available ? 1 : 0) : 1,
+      newAvailable,
       id,
     );
 

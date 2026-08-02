@@ -32,6 +32,7 @@ export default function AdminEquipmentPage() {
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchEquipment = useCallback(async () => {
@@ -147,6 +148,36 @@ export default function AdminEquipmentPage() {
     }
   }
 
+  async function handleToggleAvailability(eq: Equipment) {
+    setTogglingId(eq.id);
+    try {
+      const res = await fetch(`/api/rental/equipment/${eq.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: eq.name,
+          description: eq.description,
+          category: eq.category,
+          serial_number: eq.serial_number,
+          image_data: eq.image_data,
+          image_mime: eq.image_mime,
+          is_available: eq.is_available ? 0 : 1,
+        }),
+      });
+      if (res.status === 401) { router.push('/admin/rental/login'); return; }
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || '변경 실패');
+        return;
+      }
+      fetchEquipment();
+    } catch {
+      alert('네트워크 오류가 발생했습니다.');
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
   async function handleLogout() {
     await fetch('/api/rental/auth', { method: 'DELETE' });
     router.push('/admin/rental/login');
@@ -240,14 +271,18 @@ export default function AdminEquipmentPage() {
                   {eq.serial_number && <p className="text-xs text-slate-400">S/N: {eq.serial_number}</p>}
 
                   <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
-                    {!eq.is_available && (
-                      <Link
-                        href={`/admin/rental?q=${encodeURIComponent(eq.name)}`}
-                        className="flex-1 py-2 text-xs font-medium text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 text-center min-h-[40px] flex items-center justify-center"
-                      >
-                        대여 현황
-                      </Link>
-                    )}
+                    <button
+                      onClick={() => handleToggleAvailability(eq)}
+                      disabled={togglingId === eq.id}
+                      title={eq.is_available ? '일시적으로 대여 불가로 설정' : '대여 가능으로 복원'}
+                      className={`flex-1 py-2 text-xs font-medium rounded-lg min-h-[40px] disabled:opacity-50 ${
+                        eq.is_available
+                          ? 'text-slate-500 border border-slate-200 hover:bg-slate-50'
+                          : 'text-green-700 border border-green-200 hover:bg-green-50'
+                      }`}
+                    >
+                      {togglingId === eq.id ? '...' : eq.is_available ? '일시 불가' : '가능 복원'}
+                    </button>
                     <button
                       onClick={() => openEdit(eq)}
                       className="flex-1 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 min-h-[40px]"
