@@ -69,6 +69,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
 
+    const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+    if (rental_start_date && !ISO_DATE.test(rental_start_date)) {
+      return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
+    }
+    if (rental_end_date && !ISO_DATE.test(rental_end_date)) {
+      return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
+    }
+    if (rental_start_date && rental_end_date && rental_end_date < rental_start_date) {
+      return NextResponse.json({ error: '반납 예정일은 대여 시작일 이후여야 합니다.' }, { status: 400 });
+    }
+
     const db = getRentalDb();
 
     // Atomic: check availability + insert in one transaction to prevent double-booking

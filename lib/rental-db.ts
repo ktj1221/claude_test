@@ -57,6 +57,9 @@ export function initRentalSchema() {
       count INTEGER NOT NULL DEFAULT 0
     );
 
+    CREATE INDEX IF NOT EXISTS idx_rental_requests_status ON rental_requests(status);
+    CREATE INDEX IF NOT EXISTS idx_rental_requests_equipment_id ON rental_requests(equipment_id);
+
     CREATE TABLE IF NOT EXISTS admin_sessions (
       id TEXT PRIMARY KEY,
       token TEXT NOT NULL UNIQUE,

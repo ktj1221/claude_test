@@ -56,13 +56,18 @@ const STATUS_FILTERS = ['all', 'pending', 'approved', 'returned', 'completed', '
 
 function formatDate(d: string | null) {
   if (!d) return '-';
-  return new Date(d).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const dt = new Date(d);
+  const now = new Date();
+  const sameYear = dt.getFullYear() === now.getFullYear();
+  return sameYear
+    ? dt.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    : dt.toLocaleString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 function formatRentalDate(d: string | null) {
   if (!d) return null;
   const [y, m, day] = d.split('-');
-  return `${y.slice(2)}.${m}.${day}`;
+  return `${y}.${m}.${day}`;
 }
 
 function PhotoUpload({ label, onChange }: { label: string; onChange: (data: string, mime: string) => void }) {
@@ -265,6 +270,15 @@ export default function AdminRentalPage() {
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
+
+        {/* Result count */}
+        {!loading && !fetchError && (
+          <p className="text-xs text-slate-400 mb-2">
+            {q
+              ? `${filteredRequests.length}건 검색됨 (전체 ${requests.length}건)`
+              : `총 ${requests.length}건`}
+          </p>
+        )}
 
         {fetchError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
