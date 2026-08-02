@@ -136,7 +136,14 @@ export default function RentalPage() {
 
   if (result) {
     const statusUrl = typeof window !== 'undefined' ? `${window.location.origin}/rental/${result.request_number}` : `/rental/${result.request_number}`;
-    function copyLink() {
+    const canShare = typeof navigator !== 'undefined' && !!navigator.share;
+    async function shareOrCopy() {
+      if (canShare) {
+        try {
+          await navigator.share({ title: `대여 현황 ${result!.request_number}`, url: statusUrl });
+          return;
+        } catch { /* user cancelled */ }
+      }
       navigator.clipboard.writeText(statusUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
     }
     return (
@@ -155,9 +162,9 @@ export default function RentalPage() {
             <p className="text-2xl font-bold text-indigo-600 tracking-wider">{result.request_number}</p>
           </div>
           <p className="text-xs text-slate-400 mb-4">아래 링크를 저장하면 언제든지 현황을 확인할 수 있습니다.</p>
-          {/* Copy status URL */}
+          {/* Share / copy status URL */}
           <button
-            onClick={copyLink}
+            onClick={shareOrCopy}
             className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-4 border rounded-xl text-sm font-medium transition-all ${
               copied ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
@@ -168,6 +175,13 @@ export default function RentalPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 링크가 복사됐습니다
+              </>
+            ) : canShare ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                현황 링크 공유
               </>
             ) : (
               <>
@@ -212,7 +226,7 @@ export default function RentalPage() {
             <input
               value={searchNumber}
               onChange={(e) => setSearchNumber(e.target.value)}
-              placeholder="신청번호 조회"
+              placeholder="IG-20240801-00001"
               autoComplete="off"
               style={{ fontSize: '16px' }}
               className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0"
