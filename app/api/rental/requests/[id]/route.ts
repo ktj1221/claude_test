@@ -43,7 +43,7 @@ export async function PATCH(
     const body = await req.json();
     const { action, note, photo, photo_mime } = body;
 
-    if (note && note.length > 500) {
+    if (note && note.trim().length > 500) {
       return NextResponse.json({ error: '메모는 500자 이하여야 합니다.' }, { status: 400 });
     }
 
@@ -66,7 +66,8 @@ export async function PATCH(
 
       if (!existing) throw Object.assign(new Error('not_found'), { code: 'not_found' });
 
-      const now = new Date().toISOString();
+      // Use SQLite datetime format for consistency with created_at (datetime('now'))
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       if (action === 'approve') {
         if (existing.status !== 'pending') {
