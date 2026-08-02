@@ -135,6 +135,9 @@ export async function POST(req: NextRequest) {
     if (rental_end_date && !ISO_DATE.test(rental_end_date)) {
       return NextResponse.json({ error: '날짜 형식이 올바르지 않습니다.' }, { status: 400 });
     }
+    if (rental_end_date && !rental_start_date) {
+      return NextResponse.json({ error: '대여 시작일을 입력해주세요.' }, { status: 400 });
+    }
     if (rental_start_date && rental_end_date && rental_end_date < rental_start_date) {
       return NextResponse.json({ error: '반납 예정일은 대여 시작일 이후여야 합니다.' }, { status: 400 });
     }
@@ -151,6 +154,14 @@ export async function POST(req: NextRequest) {
       ).get(equipment_id) as { id: string } | undefined;
 
       if (!equipment) throw new Error('unavailable');
+
+      // Prevent duplicate active requests from the same phone for the same equipment
+      const duplicate = db.prepare(`
+        SELECT id FROM rental_requests
+        WHERE equipment_id = ? AND requester_phone = ? AND status IN ('pending', 'approved')
+        LIMIT 1
+      `).get(equipment_id, requester_phone.trim());
+      if (duplicate) throw new Error('duplicate');
 
       requestNumber = generateRequestNumber();
 
@@ -181,6 +192,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       if (err instanceof Error && err.message === 'unavailable') {
         return NextResponse.json({ error: '대여 가능한 장비가 아닙니다.' }, { status: 400 });
+      }
+      if (err instanceof Error && err.message === 'duplicate') {
+        return NextResponse.json({ error: '해당 장비에 이미 신청이 접수되어 있습니다.' }, { status: 409 });
       }
       throw err;
     }
