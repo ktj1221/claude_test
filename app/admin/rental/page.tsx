@@ -125,7 +125,7 @@ function PhotoUpload({ label, onChange, onRemove }: { label: string; onChange: (
           사진 제거
         </button>
       )}
-      <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
     </div>
   );
 }
@@ -538,9 +538,9 @@ export default function AdminRentalPage() {
                   </div>
                 )}
                 {[
+                  { label: '신청일', value: formatDate(selected.created_at) },
                   ...(selected.rental_start_date ? [{ label: '대여 시작', value: formatRentalDate(selected.rental_start_date) ?? selected.rental_start_date }] : []),
                   ...(selected.rental_end_date ? [{ label: '반납 예정', value: formatRentalDate(selected.rental_end_date) ?? selected.rental_end_date }] : []),
-                  ...(selected.equipment_category ? [{ label: '카테고리', value: selected.equipment_category }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} className="p-3 bg-slate-50 rounded-xl">
                     <p className="text-xs text-slate-400 mb-0.5">{label}</p>

@@ -434,7 +434,6 @@ export default function RentalPage() {
                     ref={fileRef}
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     className="hidden"
                     onChange={handlePhotoChange}
                   />
