@@ -53,9 +53,14 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   rejected:  { label: '거절됨',    color: 'text-red-700',    bg: 'bg-red-100',    step: -1 },
 };
 
+function parseDate(d: string): Date {
+  // SQLite datetime('now') returns 'YYYY-MM-DD HH:MM:SS' without timezone — treat as UTC
+  return new Date(d.includes('T') ? d : d.replace(' ', 'T') + 'Z');
+}
+
 function formatDate(dateStr: string | null) {
   if (!dateStr) return null;
-  return new Date(dateStr).toLocaleString('ko-KR', {
+  return parseDate(dateStr).toLocaleString('ko-KR', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
   });

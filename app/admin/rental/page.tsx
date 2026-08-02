@@ -54,9 +54,14 @@ const ACTION_CONFIG: Record<string, { actions: string[]; label: Record<string, s
 
 const STATUS_FILTERS = ['all', 'pending', 'approved', 'returned', 'completed', 'rejected'] as const;
 
+function parseDate(d: string): Date {
+  // SQLite datetime('now') returns 'YYYY-MM-DD HH:MM:SS' without timezone — treat as UTC
+  return new Date(d.includes('T') ? d : d.replace(' ', 'T') + 'Z');
+}
+
 function formatDate(d: string | null) {
   if (!d) return '-';
-  const dt = new Date(d);
+  const dt = parseDate(d);
   const now = new Date();
   const sameYear = dt.getFullYear() === now.getFullYear();
   return sameYear
@@ -357,6 +362,7 @@ export default function AdminRentalPage() {
             {filteredRequests.map(req => {
               const startDate = formatRentalDate(req.rental_start_date);
               const endDate = formatRentalDate(req.rental_end_date);
+              const lastActivityDate = req.rejected_at || req.completed_at || req.returned_at || req.approved_at || req.created_at;
               return (
                 <button
                   key={req.id}
@@ -378,7 +384,7 @@ export default function AdminRentalPage() {
                       )}
                       <span className="font-mono text-xs text-slate-400">{req.request_number}</span>
                     </div>
-                    <span className="text-xs text-slate-400 shrink-0 ml-2">{formatDate(req.created_at)}</span>
+                    <span className="text-xs text-slate-400 shrink-0 ml-2">{formatDate(lastActivityDate)}</span>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span className="font-semibold text-slate-800 text-sm">{req.equipment_name}</span>
