@@ -286,6 +286,11 @@ export default function AdminRentalPage() {
     ? requests.reduce((acc, r) => { acc[r.status] = (acc[r.status] || 0) + 1; return acc; }, {} as Record<string, number>)
     : countCache;
 
+  // Total count across all statuses for the "all" filter button
+  const totalCount = statusFilter === 'all'
+    ? requests.length
+    : Object.values(countCache).reduce((a, b) => a + b, 0);
+
   const q = searchQuery.trim().toLowerCase();
   const filteredRequests = q
     ? requests.filter(r =>
@@ -337,9 +342,9 @@ export default function AdminRentalPage() {
               }`}
             >
               {s === 'all' ? '전체' : STATUS_CONFIG[s]?.label}
-              {s === 'all' && requests.length > 0 && (
+              {s === 'all' && totalCount > 0 && (
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${statusFilter === 'all' ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
-                  {requests.length}
+                  {totalCount}
                 </span>
               )}
               {s !== 'all' && statusCounts[s] ? (
@@ -382,7 +387,7 @@ export default function AdminRentalPage() {
         {!loading && !fetchError && (
           <p className="text-xs text-slate-400 mb-2">
             {q
-              ? `${filteredRequests.length}건 검색됨 (전체 ${requests.length}건)`
+              ? `${filteredRequests.length}건 검색됨 (${statusFilter === 'all' ? '전체' : STATUS_CONFIG[statusFilter]?.label} ${requests.length}건 중)`
               : `총 ${requests.length}건`}
           </p>
         )}
