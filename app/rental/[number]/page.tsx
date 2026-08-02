@@ -194,12 +194,20 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
       <main className="max-w-xl mx-auto px-4 py-6">
         {loading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse">
-                <div className="h-5 bg-slate-200 rounded w-1/3 mb-3" />
-                <div className="h-4 bg-slate-100 rounded w-2/3" />
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse">
+              <div className="h-4 bg-slate-100 rounded w-24 mb-2" />
+              <div className="h-6 bg-slate-200 rounded w-48 mb-4" />
+              <div className="h-16 bg-slate-100 rounded-xl" />
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse">
+              <div className="flex justify-between">
+                {[1, 2, 3, 4].map(i => <div key={i} className="h-10 w-10 bg-slate-100 rounded-full" />)}
               </div>
-            ))}
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/3 mb-3" />
+              <div className="h-10 bg-slate-100 rounded-lg" />
+            </div>
           </div>
         ) : error ? (
           <div className="text-center py-16">
@@ -386,7 +394,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     placeholder="연락처 뒷 4자리"
                     maxLength={13}
                     style={{ fontSize: '16px' }}
-                    className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest"
+                    className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center"
                   />
                   <button
                     type="submit"
