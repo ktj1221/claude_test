@@ -311,8 +311,8 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     type="tel"
                     value={phoneInput}
                     onChange={e => setPhoneInput(e.target.value)}
-                    placeholder="뒷 4자리"
-                    maxLength={4}
+                    placeholder="연락처 뒷 4자리"
+                    maxLength={13}
                     style={{ fontSize: '16px' }}
                     className="flex-1 px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center tracking-widest"
                   />

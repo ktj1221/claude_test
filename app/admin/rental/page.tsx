@@ -129,6 +129,16 @@ export default function AdminRentalPage() {
   const [copiedNum, setCopiedNum] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && selected && !actionState) {
+        setSelected(null);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selected, actionState]);
+
   const fetchRequests = useCallback(async () => {
     setFetchError('');
     setLoading(true);
