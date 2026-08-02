@@ -516,7 +516,7 @@ export default function AdminRentalPage() {
                       {ACTION_CONFIG[selected.status].actions.map(action => (
                         <button
                           key={action}
-                          onClick={() => setActionState({ action, note: '', photo: '', photoMime: '' })}
+                          onClick={() => { setActionState({ action, note: '', photo: '', photoMime: '' }); setActionError(''); }}
                           className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors min-h-[48px] ${
                             action === 'reject'
                               ? 'bg-red-50 text-red-700 hover:bg-red-100'

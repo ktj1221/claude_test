@@ -84,6 +84,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchStatus = useCallback(async (verify?: string) => {
     try {
@@ -133,6 +134,13 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    const last4 = data?.verified ? phoneInput.replace(/\D/g, '').slice(-4) : undefined;
+    await fetchStatus(last4 && last4.length === 4 ? last4 : undefined);
+    setRefreshing(false);
   }
 
   const steps: { label: string; icon: React.ReactNode }[] = [
@@ -207,6 +215,16 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                   <p className="text-lg sm:text-xl font-bold text-indigo-600 tracking-wider">{data.request_number}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    aria-label="새로 고침"
+                    className="p-1.5 rounded-lg border bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600 transition-all disabled:opacity-40"
+                  >
+                    <svg className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
                   <button
                     onClick={copyLink}
                     title="링크 복사"
@@ -291,6 +309,9 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                   </div>
                   <div>
                     <p className="font-semibold text-red-800 text-sm">대여 신청이 거절되었습니다</p>
+                    {data.rejected_at && (
+                      <p className="text-xs text-red-500 mt-0.5">{formatDate(data.rejected_at)}</p>
+                    )}
                     <p className="text-sm text-red-600 mt-1">거절 사유는 연락처 인증 후 확인하실 수 있습니다.</p>
                   </div>
                 </div>
