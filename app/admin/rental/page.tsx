@@ -564,6 +564,12 @@ export default function AdminRentalPage() {
                 )}
               </div>
 
+              {!actionState && actionError && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+                  {actionError}
+                </p>
+              )}
+
               {selected.request_photo && (
                 <div>
                   <p className="text-xs font-medium text-slate-500 mb-1.5">신청 사진</p>
