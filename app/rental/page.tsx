@@ -349,7 +349,7 @@ export default function RentalPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">이메일</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">이메일 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                   <input
                     type="email"
                     value={form.requester_email}
@@ -384,7 +384,7 @@ export default function RentalPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">대여 시작일</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">대여 시작일 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                     <input
                       type="date"
                       value={form.rental_start_date}
@@ -395,7 +395,7 @@ export default function RentalPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">반납 예정일</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">반납 예정일 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                     <input
                       type="date"
                       value={form.rental_end_date}
@@ -446,7 +446,7 @@ export default function RentalPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-sm font-medium text-slate-700">기타 메모</label>
+                    <label className="block text-sm font-medium text-slate-700">기타 메모 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                     {form.requester_notes.length > 400 && (
                       <span className="text-xs text-orange-500">{form.requester_notes.length}/500</span>
                     )}
