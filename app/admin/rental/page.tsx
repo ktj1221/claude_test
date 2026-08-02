@@ -368,7 +368,12 @@ export default function AdminRentalPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
             <p className="font-medium text-slate-500">{q ? '검색 결과가 없습니다.' : '대여 신청이 없습니다.'}</p>
-            {q && <p className="text-xs mt-1">다른 검색어를 입력해 보세요.</p>}
+            {q && statusFilter !== 'all' && (
+              <p className="text-xs mt-1">
+                <button onClick={() => setStatusFilter('all')} className="text-indigo-500 hover:underline">전체 상태로 검색</button>하거나 다른 검색어를 입력해 보세요.
+              </p>
+            )}
+            {q && statusFilter === 'all' && <p className="text-xs mt-1">다른 검색어를 입력해 보세요.</p>}
           </div>
         ) : (
           <div className="space-y-2">
