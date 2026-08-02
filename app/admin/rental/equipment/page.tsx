@@ -277,7 +277,7 @@ export default function AdminEquipmentPage() {
           <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
               <h2 className="font-bold text-slate-900">{editTarget ? '장비 수정' : '장비 추가'}</h2>
-              <button onClick={() => setShowForm(false)} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+              <button onClick={() => { if (!saving) setShowForm(false); }} disabled={saving} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-40">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -368,7 +368,7 @@ export default function AdminEquipmentPage() {
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                 {photo && (
-                  <button type="button" onClick={() => setPhoto(null)} className="text-xs text-red-500 mt-1.5 hover:underline">
+                  <button type="button" onClick={() => setPhoto(null)} className="text-xs text-red-500 mt-1.5 py-1 hover:underline">
                     사진 제거
                   </button>
                 )}
@@ -380,7 +380,8 @@ export default function AdminEquipmentPage() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 py-3 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 min-h-[48px]"
+                  disabled={saving}
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 min-h-[48px] disabled:opacity-50"
                 >
                   취소
                 </button>
