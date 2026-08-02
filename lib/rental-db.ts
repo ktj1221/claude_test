@@ -137,7 +137,12 @@ export function createAdminSession(): string {
 
   const id = uuidv4();
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  // Store in SQLite datetime format (YYYY-MM-DD HH:MM:SS UTC) so string
+  // comparison with datetime('now') is lexicographically correct.
+  // ISO 8601 'T' separator (ASCII 84) > ' ' (ASCII 32), which would make
+  // expired sessions appear valid on their expiry date.
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 19).replace('T', ' ');
 
   db.prepare(
     'INSERT INTO admin_sessions (id, token, expires_at) VALUES (?, ?, ?)'
