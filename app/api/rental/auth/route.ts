@@ -3,7 +3,6 @@ import {
   createAdminSession,
   verifyAdminSession,
   deleteAdminSession,
-  getRentalDb,
 } from '@/lib/rental-db';
 import crypto from 'crypto';
 
@@ -76,7 +75,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '비밀번호가 올바르지 않습니다.' }, { status: 401 });
     }
 
-    getRentalDb();
     const token = createAdminSession();
 
     const res = NextResponse.json({ success: true });
