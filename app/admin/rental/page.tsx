@@ -386,9 +386,18 @@ export default function AdminRentalPage() {
         {/* Result count */}
         {!loading && !fetchError && (
           <p className="text-xs text-slate-400 mb-2">
-            {q
-              ? `${filteredRequests.length}건 검색됨 (${statusFilter === 'all' ? '전체' : STATUS_CONFIG[statusFilter]?.label} ${requests.length}건 중)`
-              : `총 ${requests.length}건`}
+            {(() => {
+              const overdueCount = requests.filter(r =>
+                r.rental_end_date && r.rental_end_date < todaySeoul &&
+                (r.status === 'approved' || r.status === 'returned')
+              ).length;
+              if (q) {
+                return `${filteredRequests.length}건 검색됨 (${statusFilter === 'all' ? '전체' : STATUS_CONFIG[statusFilter]?.label} ${requests.length}건 중)`;
+              }
+              return overdueCount > 0
+                ? `총 ${requests.length}건 · 기한 초과 ${overdueCount}건`
+                : `총 ${requests.length}건`;
+            })()}
           </p>
         )}
 
