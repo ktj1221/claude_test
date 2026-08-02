@@ -50,6 +50,10 @@ export async function PATCH(
     if (photo && photo.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
+    const VALID_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic'];
+    if (photo && photo_mime && !VALID_MIMES.includes(photo_mime)) {
+      return NextResponse.json({ error: '지원하지 않는 이미지 형식입니다.' }, { status: 400 });
+    }
 
     const db = getRentalDb();
 

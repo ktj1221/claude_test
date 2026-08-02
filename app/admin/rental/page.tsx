@@ -400,10 +400,25 @@ export default function AdminRentalPage() {
                 </div>
               )}
               <div className="grid grid-cols-2 gap-2.5 text-sm">
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-xs text-slate-400 mb-0.5">신청자</p>
+                  <p className="font-medium text-slate-800 text-sm">{selected.requester_name}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl">
+                  <p className="text-xs text-slate-400 mb-0.5">연락처</p>
+                  <a href={`tel:${selected.requester_phone}`} className="font-medium text-indigo-600 text-sm hover:underline break-all">
+                    {selected.requester_phone}
+                  </a>
+                </div>
+                {selected.requester_email && (
+                  <div className="col-span-2 p-3 bg-slate-50 rounded-xl">
+                    <p className="text-xs text-slate-400 mb-0.5">이메일</p>
+                    <a href={`mailto:${selected.requester_email}`} className="font-medium text-indigo-600 text-sm hover:underline break-all">
+                      {selected.requester_email}
+                    </a>
+                  </div>
+                )}
                 {[
-                  { label: '신청자', value: selected.requester_name },
-                  { label: '연락처', value: selected.requester_phone },
-                  ...(selected.requester_email ? [{ label: '이메일', value: selected.requester_email }] : []),
                   ...(selected.rental_start_date ? [{ label: '대여 시작', value: formatRentalDate(selected.rental_start_date) ?? selected.rental_start_date }] : []),
                   ...(selected.rental_end_date ? [{ label: '반납 예정', value: formatRentalDate(selected.rental_end_date) ?? selected.rental_end_date }] : []),
                   ...(selected.equipment_category ? [{ label: '카테고리', value: selected.equipment_category }] : []),
