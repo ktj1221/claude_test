@@ -466,6 +466,9 @@ export default function AdminRentalPage() {
               <div className="min-w-0">
                 <p className="font-mono text-xs text-slate-400">{selected.request_number}</p>
                 <h2 className="font-bold text-slate-900 truncate">{selected.equipment_name}</h2>
+                {selected.equipment_category && (
+                  <p className="text-xs text-slate-400 truncate">{selected.equipment_category}</p>
+                )}
               </div>
               <div className="flex items-center gap-2 ml-3 shrink-0">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>

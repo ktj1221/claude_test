@@ -139,7 +139,8 @@ export default function RentalPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">신청 완료!</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">신청 완료!</h2>
+          {selected && <p className="text-sm font-medium text-indigo-600 mb-1">{selected.name}</p>}
           <p className="text-slate-500 mb-5 text-sm">관리자 승인 후 이용 가능합니다.</p>
           <div className="bg-slate-50 rounded-xl p-4 mb-4">
             <p className="text-xs text-slate-400 mb-1">신청 번호</p>
