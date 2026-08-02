@@ -4,9 +4,13 @@ import { MAX_PHOTO_B64_LEN, VALID_IMAGE_MIMES } from '@/lib/constants';
 import { isAdmin } from '@/lib/admin-auth';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const db = getRentalDb();
