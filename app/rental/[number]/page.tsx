@@ -265,9 +265,16 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                     </svg>
                   </div>
                 )}
-                <div>
+                <div className="min-w-0">
                   <p className="font-semibold text-slate-900 text-sm">{data.equipment_name}</p>
                   {data.equipment_category && <p className="text-xs text-slate-400 mt-0.5">{data.equipment_category}</p>}
+                  {(data.rental_start_date || data.rental_end_date) && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      {data.rental_start_date && formatRentalDate(data.rental_start_date)}
+                      {data.rental_start_date && data.rental_end_date && ' ~ '}
+                      {data.rental_end_date && formatRentalDate(data.rental_end_date)}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
