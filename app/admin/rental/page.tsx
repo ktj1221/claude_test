@@ -465,7 +465,7 @@ export default function AdminRentalPage() {
       {selected && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start sm:justify-end"
-          onClick={() => { if (!actionState) { setSelected(null); setActionState(null); } }}
+          onClick={() => { if (!actionState && !processing) { setSelected(null); setActionState(null); } }}
         >
           <div
             className="bg-white w-full sm:w-[420px] sm:h-full rounded-t-2xl sm:rounded-none shadow-2xl flex flex-col max-h-[92vh] sm:max-h-screen"
@@ -484,7 +484,12 @@ export default function AdminRentalPage() {
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
                   {STATUS_CONFIG[selected.status]?.label}
                 </span>
-                <button onClick={() => { setSelected(null); setActionState(null); }} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                <button
+                  onClick={() => { if (!processing) { setSelected(null); setActionState(null); } }}
+                  aria-label="닫기"
+                  disabled={processing}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-40"
+                >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
