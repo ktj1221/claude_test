@@ -124,6 +124,7 @@ export default function AdminRentalPage() {
   const [countCache, setCountCache] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedNum, setCopiedNum] = useState('');
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     setFetchError('');
@@ -183,6 +184,19 @@ export default function AdminRentalPage() {
       setActionError('네트워크 오류가 발생했습니다.');
     } finally {
       setProcessing(false);
+    }
+  }
+
+  async function selectRequest(req: RentalRequest) {
+    setSelected(req);
+    setActionState(null);
+    setActionError('');
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/rental/requests/${req.id}`);
+      if (res.ok) setSelected(await res.json());
+    } finally {
+      setDetailLoading(false);
     }
   }
 
@@ -307,7 +321,7 @@ export default function AdminRentalPage() {
               return (
                 <button
                   key={req.id}
-                  onClick={() => { setSelected(req); setActionState(null); setActionError(''); }}
+                  onClick={() => selectRequest(req)}
                   className={`w-full bg-white rounded-xl p-3.5 sm:p-4 border text-left transition-all hover:shadow-md active:scale-[0.99] ${
                     selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'
                   }`}
@@ -363,7 +377,12 @@ export default function AdminRentalPage() {
             </div>
 
             {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 relative">
+              {detailLoading && (
+                <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2.5 text-sm">
                 {[
                   { label: '신청자', value: selected.requester_name },
