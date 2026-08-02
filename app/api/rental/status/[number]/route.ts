@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb } from '@/lib/rental-db';
 
+// In-memory rate limit: max 10 verify attempts per request_number per 15 minutes
+const verifyAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const WINDOW_MS = 15 * 60 * 1000;
+  const MAX_ATTEMPTS = 10;
+  const entry = verifyAttempts.get(key);
+  if (!entry || now >= entry.resetAt) {
+    verifyAttempts.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= MAX_ATTEMPTS) return false;
+  entry.count++;
+  return true;
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ number: string }> }
@@ -34,6 +51,13 @@ export async function GET(
       // Validate: must be exactly 4 digits to prevent wildcard/injection abuse
       if (!/^\d{4}$/.test(verify)) {
         return NextResponse.json({ error: '연락처가 일치하지 않습니다.' }, { status: 403 });
+      }
+
+      if (!checkRateLimit(number)) {
+        return NextResponse.json(
+          { error: '잠시 후 다시 시도해주세요. (15분간 10회 제한)' },
+          { status: 429 }
+        );
       }
 
       const full = db.prepare(`

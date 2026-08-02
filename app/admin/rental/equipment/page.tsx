@@ -263,6 +263,7 @@ export default function AdminEquipmentPage() {
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="예: Canon EOS R5"
                   autoFocus
+                  maxLength={100}
                   style={{ fontSize: '16px' }}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -281,6 +282,19 @@ export default function AdminEquipmentPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">설명</label>
+                <textarea
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="장비에 대한 설명"
+                  rows={3}
+                  maxLength={1000}
+                  style={{ fontSize: '16px' }}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">시리얼 번호</label>
                 <input
                   type="text"
@@ -289,18 +303,6 @@ export default function AdminEquipmentPage() {
                   placeholder="장비 시리얼 번호"
                   style={{ fontSize: '16px' }}
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">설명</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="장비에 대한 설명"
-                  rows={3}
-                  style={{ fontSize: '16px' }}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 />
               </div>
 

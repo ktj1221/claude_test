@@ -369,6 +369,9 @@ export default function AdminRentalPage() {
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[req.status]?.bg} ${STATUS_CONFIG[req.status]?.color}`}>
                         {STATUS_CONFIG[req.status]?.label}
                       </span>
+                      {req.rental_end_date && req.rental_end_date < new Date().toISOString().slice(0, 10) && (req.status === 'approved' || req.status === 'returned') && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
+                      )}
                       {req.equipment_category && (
                         <span className="text-xs px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md">{req.equipment_category}</span>
                       )}
@@ -537,7 +540,7 @@ export default function AdminRentalPage() {
 
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          메모{actionState.action === 'reject' ? ' (필수)' : ' (선택)'}
+                          메모{actionState.action === 'reject' ? ' (권장)' : ' (선택)'}
                         </label>
                         <textarea
                           value={actionState.note}
