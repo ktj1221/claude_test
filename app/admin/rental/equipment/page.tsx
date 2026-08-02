@@ -269,8 +269,11 @@ export default function AdminEquipmentPage() {
 
       {/* Add/Edit form — bottom sheet on mobile, centered on desktop */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col">
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+          onClick={() => { if (!saving) setShowForm(false); }}
+        >
+          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
               <h2 className="font-bold text-slate-900">{editTarget ? '장비 수정' : '장비 추가'}</h2>
               <button onClick={() => setShowForm(false)} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
@@ -391,7 +394,7 @@ export default function AdminEquipmentPage() {
       {deleteConfirm && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-          onClick={() => setDeleteConfirm(null)}
+          onClick={() => { if (!deleting) setDeleteConfirm(null); }}
         >
           <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-slate-900 mb-2">장비 삭제</h3>
