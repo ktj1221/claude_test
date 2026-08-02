@@ -91,7 +91,10 @@ export function initRentalSchema() {
     'ALTER TABLE equipment ADD COLUMN description TEXT',
   ];
   for (const sql of migrations) {
-    try { db.exec(sql); } catch { /* column already exists */ }
+    try { db.exec(sql); } catch (e) {
+      // Suppress only "duplicate column name" — re-throw unexpected errors
+      if (!(e instanceof Error) || !e.message.includes('duplicate column')) throw e;
+    }
   }
 
   // Seed request_counters from existing data
