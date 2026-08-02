@@ -191,6 +191,12 @@ export default function AdminRentalPage() {
   // Single fetch on mount — fetchRequests already handles 401 redirect
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
+  // Auto-refresh every 60 s so new submissions appear without manual reload
+  useEffect(() => {
+    const interval = setInterval(() => fetchRequests(true), 60_000);
+    return () => clearInterval(interval);
+  }, [fetchRequests]);
+
   async function handleLogout() {
     await fetch('/api/rental/auth', { method: 'DELETE' });
     router.push('/admin/rental/login');
