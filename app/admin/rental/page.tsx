@@ -311,6 +311,12 @@ export default function AdminRentalPage() {
     ? requests.length
     : Object.values(countCache).reduce((a, b) => a + b, 0);
 
+  const pendingCount = statusCounts.pending || 0;
+  const overdueCount = requests.filter(r =>
+    r.rental_end_date && r.rental_end_date < todaySeoul &&
+    (r.status === 'approved' || r.status === 'returned')
+  ).length;
+
   const q = searchQuery.trim().toLowerCase();
   const filteredRequests = q
     ? requests.filter(r =>
@@ -413,21 +419,38 @@ export default function AdminRentalPage() {
           )}
         </div>
 
+        {/* Action-required banner — visible only on 'all' filter when there's something urgent */}
+        {!loading && !fetchError && statusFilter === 'all' && !q && (pendingCount > 0 || overdueCount > 0) && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs">
+            <span className="text-amber-800 font-medium">처리 필요:</span>
+            {pendingCount > 0 && (
+              <button
+                onClick={() => setStatusFilter('pending')}
+                className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 font-semibold hover:bg-yellow-200 transition-colors"
+              >
+                대기 중 {pendingCount}건
+              </button>
+            )}
+            {overdueCount > 0 && (
+              <button
+                onClick={() => setStatusFilter('approved')}
+                className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-semibold hover:bg-red-200 transition-colors"
+              >
+                기한 초과 {overdueCount}건
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Result count */}
         {!loading && !fetchError && (
           <p className="text-xs text-slate-400 mb-2">
-            {(() => {
-              const overdueCount = requests.filter(r =>
-                r.rental_end_date && r.rental_end_date < todaySeoul &&
-                (r.status === 'approved' || r.status === 'returned')
-              ).length;
-              if (q) {
-                return `${filteredRequests.length}건 검색됨 (${statusFilter === 'all' ? '전체' : STATUS_CONFIG[statusFilter]?.label} ${requests.length}건 중)`;
-              }
-              return overdueCount > 0
-                ? `총 ${requests.length}건 · 기한 초과 ${overdueCount}건`
-                : `총 ${requests.length}건`;
-            })()}
+            {q
+              ? `${filteredRequests.length}건 검색됨 (${statusFilter === 'all' ? '전체' : STATUS_CONFIG[statusFilter]?.label} ${requests.length}건 중)`
+              : overdueCount > 0 && statusFilter === 'all'
+                ? `총 ${requests.length}건`
+                : `총 ${requests.length}건`
+            }
           </p>
         )}
 
@@ -461,12 +484,17 @@ export default function AdminRentalPage() {
               const startDate = formatRentalDate(req.rental_start_date);
               const endDate = formatRentalDate(req.rental_end_date);
               const lastActivityDate = req.rejected_at || req.completed_at || req.returned_at || req.approved_at || req.created_at;
+              const isOverdue = req.rental_end_date && req.rental_end_date < todaySeoul && (req.status === 'approved' || req.status === 'returned');
               return (
                 <button
                   key={req.id}
                   onClick={() => selectRequest(req)}
                   className={`w-full bg-white rounded-xl p-3.5 sm:p-4 border text-left transition-all hover:shadow-md active:scale-[0.99] ${
-                    selected?.id === req.id ? 'border-indigo-400 shadow-md' : 'border-slate-200'
+                    selected?.id === req.id
+                      ? 'border-indigo-400 shadow-md'
+                      : isOverdue
+                        ? 'border-l-4 border-l-red-400 border-t-slate-200 border-r-slate-200 border-b-slate-200'
+                        : 'border-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
