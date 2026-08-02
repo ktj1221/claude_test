@@ -399,7 +399,7 @@ export default function AdminEquipmentPage() {
         >
           <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-slate-900 mb-2">장비 삭제</h3>
-            <p className="text-sm text-slate-500 mb-4">이 장비를 삭제하시겠습니까? 진행 중인 대여가 있으면 삭제할 수 없습니다.</p>
+            <p className="text-sm text-slate-500 mb-4">이 장비를 삭제하시겠습니까? 대여 이력(진행 중 또는 완료)이 있으면 삭제할 수 없습니다.</p>
             {deleteError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{deleteError}</p>}
             <div className="flex gap-3">
               <button
