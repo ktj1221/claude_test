@@ -162,9 +162,9 @@ export default function AdminRentalPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [selected, actionState, processing]);
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (silent = false) => {
     setFetchError('');
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const res = await fetch(`/api/rental/requests?status=${statusFilter}`);
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
@@ -184,7 +184,7 @@ export default function AdminRentalPage() {
     } catch {
       setFetchError('목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [statusFilter, router]);
 
@@ -216,7 +216,7 @@ export default function AdminRentalPage() {
 
       setSelected(data);
       setActionState(null);
-      fetchRequests();
+      fetchRequests(true);
       // Keep badge counts fresh when filtered to a specific status
       if (statusFilter !== 'all') {
         fetch('/api/rental/requests?status=all')
