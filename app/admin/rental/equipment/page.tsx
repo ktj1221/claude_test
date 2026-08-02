@@ -313,7 +313,12 @@ export default function AdminEquipmentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">설명</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-slate-700">설명</label>
+                  {form.description.length > 800 && (
+                    <span className="text-xs text-orange-500">{form.description.length}/1000</span>
+                  )}
+                </div>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}

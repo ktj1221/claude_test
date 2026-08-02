@@ -362,9 +362,14 @@ export default function RentalPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    사용 목적 <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700">
+                      사용 목적 <span className="text-red-500">*</span>
+                    </label>
+                    {form.purpose.length > 800 && (
+                      <span className="text-xs text-orange-500">{form.purpose.length}/1000</span>
+                    )}
+                  </div>
                   <textarea
                     value={form.purpose}
                     onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
@@ -440,7 +445,12 @@ export default function RentalPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">기타 메모</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700">기타 메모</label>
+                    {form.requester_notes.length > 400 && (
+                      <span className="text-xs text-orange-500">{form.requester_notes.length}/500</span>
+                    )}
+                  </div>
                   <textarea
                     value={form.requester_notes}
                     onChange={e => setForm(f => ({ ...f, requester_notes: e.target.value }))}

@@ -149,7 +149,11 @@ export default function AdminRentalPage() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && selected && !actionState) {
+      if (e.key !== 'Escape') return;
+      if (actionState) {
+        setActionState(null);
+        setActionError('');
+      } else if (selected) {
         setSelected(null);
       }
     }
@@ -619,9 +623,14 @@ export default function AdminRentalPage() {
                       )}
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          메모{actionState.action === 'reject' ? ' (권장)' : ' (선택)'}
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-sm font-medium text-slate-700">
+                            메모{actionState.action === 'reject' ? ' (권장)' : ' (선택)'}
+                          </label>
+                          {actionState.note.length > 400 && (
+                            <span className="text-xs text-orange-500">{actionState.note.length}/500</span>
+                          )}
+                        </div>
                         <textarea
                           value={actionState.note}
                           onChange={e => setActionState(s => s ? { ...s, note: e.target.value } : s)}
