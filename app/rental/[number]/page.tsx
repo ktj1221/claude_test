@@ -440,6 +440,17 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                 )}
               </>
             )}
+            {/* New rental CTA for terminal states */}
+            {(data.status === 'completed' || data.status === 'rejected') && (
+              <div className="text-center pt-2 pb-4">
+                <Link
+                  href="/rental"
+                  className="inline-block px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  새 대여 신청하기
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </main>

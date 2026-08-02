@@ -271,6 +271,7 @@ export default function RentalPage() {
                       <div className="min-w-0">
                         <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700 truncate">{eq.name}</h3>
                         {eq.category && <p className="text-xs text-slate-400 mt-0.5">{eq.category}</p>}
+                        {eq.serial_number && <p className="text-xs text-slate-400 font-mono mt-0.5">S/N: {eq.serial_number}</p>}
                         {eq.description && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{eq.description}</p>}
                       </div>
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">대여 가능</span>
@@ -310,6 +311,7 @@ export default function RentalPage() {
                 <div>
                   <h3 className="font-semibold text-slate-900">{selected.name}</h3>
                   {selected.category && <p className="text-xs text-slate-400">{selected.category}</p>}
+                  {selected.serial_number && <p className="text-xs text-slate-400 font-mono">S/N: {selected.serial_number}</p>}
                 </div>
               </div>
 
@@ -414,11 +416,16 @@ export default function RentalPage() {
                     className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-400 active:border-indigo-600 transition-colors"
                   >
                     {photo ? (
-                      <img
-                        src={`data:${photo.mime};base64,${photo.data}`}
-                        alt="신청 사진"
-                        className="max-h-44 mx-auto rounded-lg object-contain"
-                      />
+                      <div className="relative inline-block">
+                        <img
+                          src={`data:${photo.mime};base64,${photo.data}`}
+                          alt="신청 사진"
+                          className="max-h-44 mx-auto rounded-lg object-contain"
+                        />
+                        <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full pointer-events-none">
+                          탭하여 변경
+                        </div>
+                      </div>
                     ) : (
                       <div className="text-slate-400 py-2">
                         <svg className="w-8 h-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
