@@ -270,31 +270,41 @@ export default function AdminEquipmentPage() {
                   {eq.description && <p className="text-sm text-slate-500 line-clamp-2 mb-2">{eq.description}</p>}
                   {eq.serial_number && <p className="text-xs text-slate-400">S/N: {eq.serial_number}</p>}
 
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
-                    <button
-                      onClick={() => handleToggleAvailability(eq)}
-                      disabled={togglingId === eq.id}
-                      title={eq.is_available ? '일시적으로 대여 불가로 설정' : '대여 가능으로 복원'}
-                      className={`flex-1 py-2 text-xs font-medium rounded-lg min-h-[40px] disabled:opacity-50 ${
-                        eq.is_available
-                          ? 'text-slate-500 border border-slate-200 hover:bg-slate-50'
-                          : 'text-green-700 border border-green-200 hover:bg-green-50'
-                      }`}
-                    >
-                      {togglingId === eq.id ? '...' : eq.is_available ? '일시 불가' : '가능 복원'}
-                    </button>
-                    <button
-                      onClick={() => openEdit(eq)}
-                      className="flex-1 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 min-h-[40px]"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => { setDeleteConfirm(eq.id); setDeleteError(''); }}
-                      className="flex-1 py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 min-h-[40px]"
-                    >
-                      삭제
-                    </button>
+                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                    {!eq.is_available && (
+                      <Link
+                        href={`/admin/rental?q=${encodeURIComponent(eq.name)}`}
+                        className="block w-full py-2 text-xs font-medium text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 text-center min-h-[40px] flex items-center justify-center"
+                      >
+                        대여 현황 보기 →
+                      </Link>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleToggleAvailability(eq)}
+                        disabled={togglingId === eq.id}
+                        title={eq.is_available ? '일시적으로 대여 불가로 설정' : '대여 가능으로 복원'}
+                        className={`flex-1 py-2 text-xs font-medium rounded-lg min-h-[40px] disabled:opacity-50 ${
+                          eq.is_available
+                            ? 'text-slate-500 border border-slate-200 hover:bg-slate-50'
+                            : 'text-green-700 border border-green-200 hover:bg-green-50'
+                        }`}
+                      >
+                        {togglingId === eq.id ? '...' : eq.is_available ? '일시 불가' : '가능 복원'}
+                      </button>
+                      <button
+                        onClick={() => openEdit(eq)}
+                        className="flex-1 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 min-h-[40px]"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => { setDeleteConfirm(eq.id); setDeleteError(''); }}
+                        className="flex-1 py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 min-h-[40px]"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
