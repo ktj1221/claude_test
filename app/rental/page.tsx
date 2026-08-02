@@ -85,6 +85,14 @@ export default function RentalPage() {
       setError('이름, 연락처, 사용 목적은 필수 입력 항목입니다.');
       return;
     }
+    if (form.requester_phone.trim().length < 4) {
+      setError('연락처는 4자 이상 입력해주세요.');
+      return;
+    }
+    if (form.requester_email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.requester_email.trim())) {
+      setError('이메일 형식이 올바르지 않습니다.');
+      return;
+    }
     if (form.rental_start_date && form.rental_end_date && form.rental_end_date < form.rental_start_date) {
       setError('반납 예정일은 대여 시작일 이후여야 합니다.');
       return;
