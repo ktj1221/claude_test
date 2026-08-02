@@ -137,6 +137,7 @@ export default function RentalPage() {
             <p className="text-xs text-slate-400 mb-1">신청 번호</p>
             <p className="text-2xl font-bold text-indigo-600 tracking-wider">{result.request_number}</p>
           </div>
+          <p className="text-xs text-slate-400 mb-4">아래 링크를 저장하면 언제든지 현황을 확인할 수 있습니다.</p>
           {/* Copy status URL */}
           <button
             onClick={copyLink}

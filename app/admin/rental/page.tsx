@@ -197,7 +197,13 @@ export default function AdminRentalPage() {
     setDetailLoading(true);
     try {
       const res = await fetch(`/api/rental/requests/${req.id}`);
-      if (res.ok) setSelected(await res.json());
+      if (res.ok) {
+        setSelected(await res.json());
+      } else if (res.status !== 401) {
+        setActionError('상세 정보를 불러오지 못했습니다. 기본 정보만 표시됩니다.');
+      }
+    } catch {
+      setActionError('네트워크 오류로 상세 정보를 불러오지 못했습니다.');
     } finally {
       setDetailLoading(false);
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb, verifyAdminSession, RentalStatus } from '@/lib/rental-db';
-import { MAX_PHOTO_B64_LEN } from '@/lib/constants';
+import { MAX_PHOTO_B64_LEN, VALID_IMAGE_MIMES } from '@/lib/constants';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('rental_admin_token')?.value;
@@ -54,8 +54,7 @@ export async function PATCH(
     if (photo && photo.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
     }
-    const VALID_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic'];
-    if (photo && photo_mime && !VALID_MIMES.includes(photo_mime)) {
+    if (photo && photo_mime && !(VALID_IMAGE_MIMES as readonly string[]).includes(photo_mime)) {
       return NextResponse.json({ error: '지원하지 않는 이미지 형식입니다.' }, { status: 400 });
     }
 
