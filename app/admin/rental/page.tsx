@@ -73,11 +73,13 @@ function formatRentalDate(d: string | null) {
 function PhotoUpload({ label, onChange }: { label: string; onChange: (data: string, mime: string) => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [sizeError, setSizeError] = useState('');
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert('사진은 5MB 이하여야 합니다.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setSizeError('사진은 5MB 이하여야 합니다.'); return; }
+    setSizeError('');
     const reader = new FileReader();
     reader.onload = () => {
       const src = reader.result as string;
@@ -106,6 +108,7 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
           </div>
         )}
       </div>
+      {sizeError && <p className="text-xs text-red-600 mt-1">{sizeError}</p>}
       <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
     </div>
   );

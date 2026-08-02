@@ -279,6 +279,23 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
               </div>
             )}
 
+            {/* Rejection notice — visible before verification */}
+            {data.status === 'rejected' && !data.verified && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-red-800 text-sm">대여 신청이 거절되었습니다</p>
+                    <p className="text-sm text-red-600 mt-1">거절 사유는 연락처 인증 후 확인하실 수 있습니다.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Phone verification gate */}
             {!data.verified && (
               <div className="bg-white rounded-2xl border border-slate-200 p-5">

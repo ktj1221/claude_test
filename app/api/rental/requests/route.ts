@@ -18,6 +18,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
 
+    const VALID_STATUSES = new Set(['all', 'pending', 'approved', 'returned', 'completed', 'rejected']);
+    if (status && !VALID_STATUSES.has(status)) {
+      return NextResponse.json({ error: '유효하지 않은 상태입니다.' }, { status: 400 });
+    }
+
     let query = `
       SELECT r.id, r.request_number, r.equipment_id, r.requester_name, r.requester_phone,
              r.requester_email, r.purpose, r.rental_start_date, r.rental_end_date,
@@ -67,6 +72,10 @@ export async function POST(req: NextRequest) {
     // Server-side photo size guard
     if (request_photo && request_photo.length > MAX_PHOTO_B64_LEN) {
       return NextResponse.json({ error: '사진 크기는 5MB 이하여야 합니다.' }, { status: 400 });
+    }
+    const VALID_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic'];
+    if (request_photo && request_photo_mime && !VALID_MIMES.includes(request_photo_mime)) {
+      return NextResponse.json({ error: '지원하지 않는 이미지 형식입니다.' }, { status: 400 });
     }
 
     const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
