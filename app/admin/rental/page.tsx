@@ -46,7 +46,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 
 const ACTION_CONFIG: Record<string, { actions: string[]; label: Record<string, string> }> = {
   pending:   { actions: ['approve', 'reject'], label: { approve: '승인', reject: '거절' } },
-  approved:  { actions: ['mark_returned'],     label: { mark_returned: '반납 처리' } },
+  approved:  { actions: ['mark_returned', 'reject'], label: { mark_returned: '반납 처리', reject: '대여 취소' } },
   returned:  { actions: ['complete'],          label: { complete: '반납 승인' } },
   completed: { actions: [], label: {} },
   rejected:  { actions: [], label: {} },

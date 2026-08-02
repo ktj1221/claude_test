@@ -54,6 +54,11 @@ export async function PATCH(
       return NextResponse.json({ error: '지원하지 않는 이미지 형식입니다.' }, { status: 400 });
     }
 
+    const VALID_ACTIONS = new Set(['approve', 'reject', 'mark_returned', 'complete']);
+    if (!action || !VALID_ACTIONS.has(action)) {
+      return NextResponse.json({ error: '유효하지 않은 액션입니다.' }, { status: 400 });
+    }
+
     const db = getRentalDb();
 
     const performAction = db.transaction(() => {
@@ -92,14 +97,18 @@ export async function PATCH(
         `).run(now, existing.equip_id, id);
 
       } else if (action === 'reject') {
-        if (existing.status !== 'pending') {
-          throw Object.assign(new Error('대기 중인 신청만 거절할 수 있습니다.'), { code: 'invalid_state' });
+        if (existing.status !== 'pending' && existing.status !== 'approved') {
+          throw Object.assign(new Error('대기 중이거나 승인된 신청만 취소/거절할 수 있습니다.'), { code: 'invalid_state' });
         }
         db.prepare(`
           UPDATE rental_requests SET
             status = 'rejected', rejection_notes = ?, rejected_at = ?
           WHERE id = ?
         `).run(note?.trim() || null, now, id);
+        // Cancelling an approved rental must restore equipment availability
+        if (existing.status === 'approved') {
+          db.prepare('UPDATE equipment SET is_available = 1 WHERE id = ?').run(existing.equip_id);
+        }
 
       } else if (action === 'mark_returned') {
         if (existing.status !== 'approved') {
