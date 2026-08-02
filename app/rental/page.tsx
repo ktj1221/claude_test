@@ -282,7 +282,10 @@ export default function RentalPage() {
                         {eq.serial_number && <p className="text-xs text-slate-400 font-mono mt-0.5">S/N: {eq.serial_number}</p>}
                         {eq.description && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{eq.description}</p>}
                       </div>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">대여 가능</span>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">대여 가능</span>
+                        <span className="text-xs text-indigo-500 font-medium group-hover:text-indigo-700">신청 →</span>
+                      </div>
                     </div>
                   </button>
                 ))}
