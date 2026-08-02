@@ -38,6 +38,8 @@ export default function RentalPage() {
   const [equipError, setEquipError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const fetchEquipment = useCallback(async () => {
     setEquipError(false);
     setLoading(true);
@@ -339,6 +341,7 @@ export default function RentalPage() {
                     value={form.requester_email}
                     onChange={e => setForm(f => ({ ...f, requester_email: e.target.value }))}
                     placeholder="example@email.com"
+                    maxLength={200}
                     style={{ fontSize: '16px' }}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
@@ -365,6 +368,7 @@ export default function RentalPage() {
                     <input
                       type="date"
                       value={form.rental_start_date}
+                      min={today}
                       onChange={e => setForm(f => ({ ...f, rental_start_date: e.target.value }))}
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -375,6 +379,7 @@ export default function RentalPage() {
                     <input
                       type="date"
                       value={form.rental_end_date}
+                      min={form.rental_start_date || today}
                       onChange={e => setForm(f => ({ ...f, rental_end_date: e.target.value }))}
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"

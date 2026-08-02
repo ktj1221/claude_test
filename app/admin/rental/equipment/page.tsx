@@ -221,6 +221,14 @@ export default function AdminEquipmentPage() {
                   {eq.serial_number && <p className="text-xs text-slate-400">S/N: {eq.serial_number}</p>}
 
                   <div className="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+                    {!eq.is_available && (
+                      <Link
+                        href={`/admin/rental?q=${encodeURIComponent(eq.name)}`}
+                        className="flex-1 py-2 text-xs font-medium text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 text-center min-h-[40px] flex items-center justify-center"
+                      >
+                        대여 현황
+                      </Link>
+                    )}
                     <button
                       onClick={() => openEdit(eq)}
                       className="flex-1 py-2 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 min-h-[40px]"

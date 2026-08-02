@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface RentalRequest {
@@ -116,6 +116,7 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
 
 export default function AdminRentalPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -125,7 +126,7 @@ export default function AdminRentalPage() {
   const [actionError, setActionError] = useState('');
   const [fetchError, setFetchError] = useState('');
   const [countCache, setCountCache] = useState<Record<string, number>>({});
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
   const [copiedNum, setCopiedNum] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
 
