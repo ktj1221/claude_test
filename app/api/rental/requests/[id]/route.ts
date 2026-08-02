@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb, verifyAdminSession, RentalStatus } from '@/lib/rental-db';
-
-const MAX_PHOTO_B64_LEN = Math.ceil((5 * 1024 * 1024) * 4 / 3);
+import { MAX_PHOTO_B64_LEN } from '@/lib/constants';
 
 function isAdmin(req: NextRequest): boolean {
   const token = req.cookies.get('rental_admin_token')?.value;

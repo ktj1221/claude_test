@@ -37,8 +37,8 @@ export default function RentalPage() {
   const fetchEquipment = useCallback(async () => {
     try {
       const res = await fetch('/api/rental/equipment?available=true');
+      if (!res.ok) { setLoading(false); return; }
       const data = await res.json();
-      // Strip image blobs from list — only needed in detail view
       setEquipment(Array.isArray(data) ? data : []);
     } catch {
       console.error('장비 목록 로드 실패');

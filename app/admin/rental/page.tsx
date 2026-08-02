@@ -114,9 +114,14 @@ export default function AdminRentalPage() {
 
   const fetchRequests = useCallback(async () => {
     setFetchError('');
+    setLoading(true);
     try {
       const res = await fetch(`/api/rental/requests?status=${statusFilter}`);
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
+      if (!res.ok) {
+        setFetchError('목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setRequests(list);
