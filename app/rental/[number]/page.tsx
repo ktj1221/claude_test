@@ -22,8 +22,9 @@ interface RentalBasic {
   created_at: string;
   equipment_name: string;
   equipment_category: string | null;
-  equipment_image: string | null;
-  equipment_image_mime: string;
+  // equipment_image/mime only present on verified (full) response
+  equipment_image?: string | null;
+  equipment_image_mime?: string;
   verified: boolean;
 }
 

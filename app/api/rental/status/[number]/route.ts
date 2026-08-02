@@ -39,14 +39,13 @@ export async function GET(
 
     const db = getRentalDb();
 
-    // Always return basic status info (no PII)
+    // Always return basic status info (no PII, no heavy image data)
     const basic = db.prepare(`
       SELECT
         r.request_number, r.status,
         r.rental_start_date, r.rental_end_date,
         r.approved_at, r.returned_at, r.completed_at, r.rejected_at, r.created_at,
-        e.name as equipment_name, e.category as equipment_category,
-        e.image_data as equipment_image, e.image_mime as equipment_image_mime
+        e.name as equipment_name, e.category as equipment_category
       FROM rental_requests r
       JOIN equipment e ON r.equipment_id = e.id
       WHERE r.request_number = ?
