@@ -377,8 +377,14 @@ export default function AdminRentalPage() {
 
       {/* Detail panel — full screen on mobile, side drawer on desktop */}
       {selected && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start sm:justify-end">
-          <div className="bg-white w-full sm:w-[420px] sm:h-full rounded-t-2xl sm:rounded-none shadow-2xl flex flex-col max-h-[92vh] sm:max-h-screen">
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-start sm:justify-end"
+          onClick={() => { if (!actionState) { setSelected(null); setActionState(null); } }}
+        >
+          <div
+            className="bg-white w-full sm:w-[420px] sm:h-full rounded-t-2xl sm:rounded-none shadow-2xl flex flex-col max-h-[92vh] sm:max-h-screen"
+            onClick={e => e.stopPropagation()}
+          >
             {/* Panel header */}
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="min-w-0">
