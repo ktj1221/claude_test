@@ -121,7 +121,7 @@ function PhotoUpload({ label, onChange, onRemove }: { label: string; onChange: (
       </div>
       {sizeError && <p className="text-xs text-red-600 mt-1">{sizeError}</p>}
       {preview && (
-        <button type="button" onClick={handleRemove} className="text-xs text-red-500 mt-1.5 hover:underline">
+        <button type="button" onClick={handleRemove} className="text-xs text-red-500 mt-1.5 py-1 hover:underline">
           사진 제거
         </button>
       )}
@@ -480,10 +480,13 @@ export default function AdminRentalPage() {
                   <p className="text-xs text-slate-400 truncate">{selected.equipment_category}</p>
                 )}
               </div>
-              <div className="flex items-center gap-2 ml-3 shrink-0">
+              <div className="flex items-center gap-2 ml-3 shrink-0 flex-wrap justify-end">
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
                   {STATUS_CONFIG[selected.status]?.label}
                 </span>
+                {selected.rental_end_date && selected.rental_end_date < todaySeoul && (selected.status === 'approved' || selected.status === 'returned') && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">기한 초과</span>
+                )}
                 <button
                   onClick={() => { if (!processing) { setSelected(null); setActionState(null); } }}
                   aria-label="닫기"
