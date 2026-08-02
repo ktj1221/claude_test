@@ -314,6 +314,7 @@ export default function RentalPage() {
                       onChange={e => setForm(f => ({ ...f, requester_name: e.target.value }))}
                       placeholder="홍길동"
                       maxLength={100}
+                      autoComplete="name"
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -328,6 +329,7 @@ export default function RentalPage() {
                       onChange={e => setForm(f => ({ ...f, requester_phone: e.target.value }))}
                       placeholder="010-0000-0000"
                       maxLength={20}
+                      autoComplete="tel"
                       style={{ fontSize: '16px' }}
                       className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -342,6 +344,7 @@ export default function RentalPage() {
                     onChange={e => setForm(f => ({ ...f, requester_email: e.target.value }))}
                     placeholder="example@email.com"
                     maxLength={200}
+                    autoComplete="email"
                     style={{ fontSize: '16px' }}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
