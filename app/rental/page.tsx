@@ -36,6 +36,7 @@ export default function RentalPage() {
   const [searchNumber, setSearchNumber] = useState('');
   const [copied, setCopied] = useState(false);
   const [equipError, setEquipError] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
@@ -130,6 +131,7 @@ export default function RentalPage() {
     setSelected(null);
     setPhoto(null);
     setError('');
+    setCategoryFilter('all');
     setForm({ requester_name: '', requester_phone: '', requester_email: '', purpose: '', rental_start_date: '', rental_end_date: '', requester_notes: '' });
     fetchEquipment();
   }
@@ -246,6 +248,34 @@ export default function RentalPage() {
               <p className="text-sm text-slate-500">대여할 장비를 선택하세요.</p>
             </div>
 
+            {!loading && !equipError && equipment.length > 1 && (() => {
+              const cats = Array.from(new Set(equipment.map(e => e.category).filter(Boolean))) as string[];
+              if (cats.length < 2) return null;
+              return (
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+                  <button
+                    onClick={() => setCategoryFilter('all')}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      categoryFilter === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    전체
+                  </button>
+                  {cats.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                        categoryFilter === cat ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[1, 2, 3, 4].map(i => (
@@ -270,7 +300,7 @@ export default function RentalPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {equipment.map(eq => (
+                {equipment.filter(eq => categoryFilter === 'all' || eq.category === categoryFilter).map(eq => (
                   <button
                     key={eq.id}
                     onClick={() => setSelected(eq)}
@@ -494,7 +524,8 @@ export default function RentalPage() {
                   />
                 </div>
 
-                {error && <p className="text-sm text-red-600 bg-red-50 px-3 py-2.5 rounded-lg">{error}</p>}
+                {/* Error: desktop shows it inline; mobile shows it in the sticky bar to stay visible */}
+                {error && <p className="hidden sm:block text-sm text-red-600 bg-red-50 px-3 py-2.5 rounded-lg">{error}</p>}
 
                 {/* Desktop submit */}
                 <button
