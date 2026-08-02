@@ -33,6 +33,8 @@ export default function AdminEquipmentPage() {
   const [deleting, setDeleting] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toggleError, setToggleError] = useState('');
+  const [search, setSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchEquipment = useCallback(async () => {
@@ -167,12 +169,13 @@ export default function AdminEquipmentPage() {
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || '변경 실패');
+        setToggleError(data.error || '변경 실패');
         return;
       }
+      setToggleError('');
       fetchEquipment();
     } catch {
-      alert('네트워크 오류가 발생했습니다.');
+      setToggleError('네트워크 오류가 발생했습니다.');
     } finally {
       setTogglingId(null);
     }
@@ -182,6 +185,20 @@ export default function AdminEquipmentPage() {
     await fetch('/api/rental/auth', { method: 'DELETE' });
     router.push('/admin/rental/login');
   }
+
+  const filteredEquipment = search.trim()
+    ? equipment.filter(eq => {
+        const q = search.trim().toLowerCase();
+        return (
+          eq.name.toLowerCase().includes(q) ||
+          (eq.category?.toLowerCase().includes(q) ?? false) ||
+          (eq.description?.toLowerCase().includes(q) ?? false) ||
+          (eq.serial_number?.toLowerCase().includes(q) ?? false)
+        );
+      })
+    : equipment;
+
+  const deleteTarget = deleteConfirm ? equipment.find(e => e.id === deleteConfirm) : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -224,13 +241,45 @@ export default function AdminEquipmentPage() {
           </div>
         )}
         {!loading && !fetchError && equipment.length > 0 && (
-          <p className="text-xs text-slate-400 mb-3">
-            전체 {equipment.length}개 · 대여 가능 {equipment.filter(e => e.is_available).length}개 · 대여 중 {equipment.filter(e => !e.is_available).length}개
-          </p>
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-2">
+            <p className="text-xs text-slate-400 shrink-0">
+              전체 {equipment.length}개 · 대여 가능 {equipment.filter(e => e.is_available).length}개 · 대여 중 {equipment.filter(e => !e.is_available).length}개
+            </p>
+            <div className="relative sm:ml-auto sm:w-56">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="장비명, 카테고리 검색"
+                style={{ fontSize: '16px' }}
+                className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {toggleError && (
+          <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm text-orange-700">{toggleError}</p>
+            <button onClick={() => setToggleError('')} className="text-orange-500 hover:text-orange-700">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         )}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {[1, 2, 3].map(i => <div key={i} className="bg-white rounded-xl h-52 border border-slate-200 animate-pulse" />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="bg-white rounded-xl h-52 border border-slate-200 animate-pulse" />)}
           </div>
         ) : equipment.length === 0 ? (
           <div className="text-center py-20">
@@ -242,9 +291,14 @@ export default function AdminEquipmentPage() {
               첫 장비 추가
             </button>
           </div>
+        ) : filteredEquipment.length === 0 && search ? (
+          <div className="text-center py-16">
+            <p className="text-slate-400 text-sm">"{search}"에 해당하는 장비가 없습니다.</p>
+            <button onClick={() => setSearch('')} className="mt-2 text-xs text-indigo-500 hover:underline">검색 초기화</button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {equipment.map(eq => (
+            {filteredEquipment.map(eq => (
               <div key={eq.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
                 {eq.image_data ? (
                   <img
@@ -455,6 +509,9 @@ export default function AdminEquipmentPage() {
         >
           <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl p-6" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-slate-900 mb-2">장비 삭제</h3>
+            {deleteTarget && (
+              <p className="text-sm font-medium text-slate-700 mb-1 truncate">"{deleteTarget.name}"</p>
+            )}
             <p className="text-sm text-slate-500 mb-4">이 장비를 삭제하시겠습니까? 대여 이력(진행 중 또는 완료)이 있으면 삭제할 수 없습니다.</p>
             {deleteError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{deleteError}</p>}
             <div className="flex gap-3">
