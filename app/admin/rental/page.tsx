@@ -221,7 +221,9 @@ export default function AdminRentalPage() {
     ? requests.filter(r =>
         r.requester_name.toLowerCase().includes(q) ||
         r.equipment_name.toLowerCase().includes(q) ||
-        r.request_number.toLowerCase().includes(q)
+        r.request_number.toLowerCase().includes(q) ||
+        r.requester_phone.includes(q) ||
+        (r.requester_email && r.requester_email.toLowerCase().includes(q))
       )
     : requests;
 
@@ -287,7 +289,7 @@ export default function AdminRentalPage() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="신청자 · 장비명 · 신청번호 검색"
+            placeholder="신청자 · 장비명 · 신청번호 · 연락처 검색"
             autoComplete="off"
             style={{ fontSize: '16px' }}
             className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"

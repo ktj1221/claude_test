@@ -86,6 +86,15 @@ export async function PATCH(
 
         db.prepare('UPDATE equipment SET is_available = 0 WHERE id = ?').run(existing.equip_id);
 
+        // Auto-reject other pending requests for the same equipment
+        db.prepare(`
+          UPDATE rental_requests SET
+            status = 'rejected',
+            rejection_notes = '동일 장비에 대한 다른 신청이 승인되었습니다.',
+            rejected_at = ?
+          WHERE equipment_id = ? AND status = 'pending' AND id != ?
+        `).run(now, existing.equip_id, id);
+
       } else if (action === 'reject') {
         if (existing.status !== 'pending') {
           throw Object.assign(new Error('대기 중인 신청만 거절할 수 있습니다.'), { code: 'invalid_state' });
