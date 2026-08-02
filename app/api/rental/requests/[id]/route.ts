@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRentalDb, verifyAdminSession, RentalStatus } from '@/lib/rental-db';
+import { getRentalDb, RentalStatus } from '@/lib/rental-db';
 import { MAX_PHOTO_B64_LEN, VALID_IMAGE_MIMES } from '@/lib/constants';
-
-function isAdmin(req: NextRequest): boolean {
-  const token = req.cookies.get('rental_admin_token')?.value;
-  return !!token && verifyAdminSession(token);
-}
+import { isAdmin } from '@/lib/admin-auth';
 
 export async function GET(
   req: NextRequest,
