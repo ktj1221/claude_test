@@ -67,7 +67,7 @@ export async function GET(
       if (!checkRateLimit(ip, number)) {
         return NextResponse.json(
           { error: '잠시 후 다시 시도해주세요. (15분간 10회 제한)' },
-          { status: 429 }
+          { status: 429, headers: { 'Retry-After': '900' } }
         );
       }
 

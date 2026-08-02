@@ -61,13 +61,14 @@ export async function PUT(
     }
 
     const db = getRentalDb();
-    const existing = db.prepare('SELECT id FROM equipment WHERE id = ?').get(id);
+    const existing = db.prepare('SELECT id, is_available FROM equipment WHERE id = ?').get(id) as
+      { id: string; is_available: number } | undefined;
     if (!existing) {
       return NextResponse.json({ error: '장비를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // Prevent manually restoring availability while an active rental is in progress
-    const newAvailable = is_available !== undefined ? (is_available ? 1 : 0) : 1;
+    // Preserve current availability when the field is omitted; never silently restore a locked equipment
+    const newAvailable = is_available !== undefined ? (is_available ? 1 : 0) : existing.is_available;
     if (newAvailable === 1) {
       const activeRental = db.prepare(`
         SELECT id FROM rental_requests

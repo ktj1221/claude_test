@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     if (!checkLoginRateLimit(ip)) {
       return NextResponse.json(
         { error: '잠시 후 다시 시도해주세요. (15분간 5회 제한)' },
-        { status: 429 }
+        { status: 429, headers: { 'Retry-After': '900' } }
       );
     }
 

@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   if (!checkSubmitRateLimit(ip)) {
     return NextResponse.json(
       { error: '잠시 후 다시 시도해주세요. (10분간 5회 제한)' },
-      { status: 429 }
+      { status: 429, headers: { 'Retry-After': '600' } }
     );
   }
 
