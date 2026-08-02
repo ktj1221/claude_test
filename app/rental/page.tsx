@@ -200,8 +200,9 @@ export default function RentalPage() {
               value={searchNumber}
               onChange={(e) => setSearchNumber(e.target.value)}
               placeholder="신청번호 조회"
-              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 text-base"
+              autoComplete="off"
               style={{ fontSize: '16px' }}
+              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0"
             />
             <button type="submit" className="px-3 py-2 bg-slate-700 text-white text-sm rounded-lg hover:bg-slate-800 shrink-0">
               조회
@@ -221,7 +222,7 @@ export default function RentalPage() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-white rounded-xl border border-slate-200 animate-pulse h-36 sm:h-44" />
+                  <div key={i} className="bg-white rounded-xl border border-slate-200 animate-pulse h-48 sm:h-52" />
                 ))}
               </div>
             ) : equipError ? (
