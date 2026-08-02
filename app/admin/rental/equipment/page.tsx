@@ -300,7 +300,7 @@ export default function AdminEquipmentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">카테고리</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">카테고리 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                 <input
                   type="text"
                   value={form.category}
@@ -314,7 +314,7 @@ export default function AdminEquipmentPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-slate-700">설명</label>
+                  <label className="block text-sm font-medium text-slate-700">설명 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                   {form.description.length > 800 && (
                     <span className="text-xs text-orange-500">{form.description.length}/1000</span>
                   )}
@@ -331,7 +331,7 @@ export default function AdminEquipmentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">시리얼 번호</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">시리얼 번호 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                 <input
                   type="text"
                   value={form.serial_number}
@@ -344,17 +344,22 @@ export default function AdminEquipmentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">장비 사진</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">장비 사진 <span className="text-xs font-normal text-slate-400">(선택)</span></label>
                 <div
                   onClick={() => fileRef.current?.click()}
                   className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-indigo-400 active:border-indigo-600 transition-colors"
                 >
                   {photo ? (
-                    <img
-                      src={`data:${photo.mime};base64,${photo.data}`}
-                      alt="장비 사진"
-                      className="max-h-44 mx-auto rounded-lg object-contain"
-                    />
+                    <div className="relative inline-block">
+                      <img
+                        src={`data:${photo.mime};base64,${photo.data}`}
+                        alt="장비 사진"
+                        className="max-h-44 mx-auto rounded-lg object-contain"
+                      />
+                      <div className="absolute bottom-1 right-1 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full pointer-events-none">
+                        탭하여 변경
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-slate-400 py-3">
                       <svg className="w-8 h-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

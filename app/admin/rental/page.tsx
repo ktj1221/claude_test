@@ -670,7 +670,11 @@ export default function AdminRentalPage() {
                         <textarea
                           value={actionState.note}
                           onChange={e => setActionState(s => s ? { ...s, note: e.target.value } : s)}
-                          placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모'}
+                          placeholder={
+                            actionState.action !== 'reject' ? '관리자 메모'
+                            : selected.status === 'approved' ? '취소 사유를 입력하세요.'
+                            : '거절 사유를 입력하세요.'
+                          }
                           rows={2}
                           maxLength={500}
                           autoFocus={actionState.action === 'reject'}
@@ -682,7 +686,9 @@ export default function AdminRentalPage() {
                           }`}
                         />
                         {actionState.action === 'reject' && !actionState.note.trim() && (
-                          <p className="text-xs text-orange-600 mt-1">거절 사유를 입력하면 신청자에게 도움이 됩니다.</p>
+                          <p className="text-xs text-orange-600 mt-1">
+                            {selected.status === 'approved' ? '취소 사유를 입력하면 신청자에게 도움이 됩니다.' : '거절 사유를 입력하면 신청자에게 도움이 됩니다.'}
+                          </p>
                         )}
                       </div>
 
