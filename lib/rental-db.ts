@@ -72,7 +72,24 @@ export function initRentalSchema() {
   const migrations = [
     'ALTER TABLE rental_requests ADD COLUMN approval_notes TEXT',
     'ALTER TABLE rental_requests ADD COLUMN rejection_notes TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN return_notes TEXT',
     'ALTER TABLE rental_requests ADD COLUMN completion_notes TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN approval_photo TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN approval_photo_mime TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN return_photo TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN return_photo_mime TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN completion_photo TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN completion_photo_mime TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN requester_email TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN rental_start_date TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN rental_end_date TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN request_photo TEXT',
+    'ALTER TABLE rental_requests ADD COLUMN request_photo_mime TEXT',
+    'ALTER TABLE equipment ADD COLUMN image_data TEXT',
+    'ALTER TABLE equipment ADD COLUMN image_mime TEXT',
+    'ALTER TABLE equipment ADD COLUMN category TEXT',
+    'ALTER TABLE equipment ADD COLUMN serial_number TEXT',
+    'ALTER TABLE equipment ADD COLUMN description TEXT',
   ];
   for (const sql of migrations) {
     try { db.exec(sql); } catch { /* column already exists */ }
