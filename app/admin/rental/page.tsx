@@ -204,6 +204,7 @@ export default function AdminRentalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      if (res.status === 401) { router.push('/admin/rental/login'); return; }
       const data = await res.json();
       if (!res.ok) { setActionError(data.error || '처리 실패'); return; }
 

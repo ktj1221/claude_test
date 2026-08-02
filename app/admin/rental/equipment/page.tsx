@@ -30,6 +30,7 @@ export default function AdminEquipmentPage() {
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [fetchError, setFetchError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -106,6 +107,7 @@ export default function AdminEquipmentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
+      if (res.status === 401) { router.push('/admin/rental/login'); return; }
       const data = await res.json();
       if (!res.ok) { setError(data.error || '저장 실패'); return; }
       setShowForm(false);
@@ -119,14 +121,18 @@ export default function AdminEquipmentPage() {
 
   async function handleDelete(id: string) {
     setDeleteError('');
+    setDeleting(true);
     try {
       const res = await fetch(`/api/rental/equipment/${id}`, { method: 'DELETE' });
+      if (res.status === 401) { router.push('/admin/rental/login'); return; }
       const data = await res.json();
       if (!res.ok) { setDeleteError(data.error || '삭제 실패'); return; }
       setDeleteConfirm(null);
       fetchEquipment();
     } catch {
       setDeleteError('네트워크 오류가 발생했습니다.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -389,9 +395,10 @@ export default function AdminEquipmentPage() {
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 py-3 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 min-h-[48px]"
+                disabled={deleting}
+                className="flex-1 py-3 bg-red-600 text-white text-sm font-semibold rounded-xl hover:bg-red-700 disabled:opacity-60 min-h-[48px]"
               >
-                삭제
+                {deleting ? '삭제 중...' : '삭제'}
               </button>
             </div>
           </div>
