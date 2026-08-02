@@ -101,28 +101,39 @@ export async function DELETE(
     const { id } = await params;
     const db = getRentalDb();
 
-    const activeRental = db.prepare(`
-      SELECT id FROM rental_requests
-      WHERE equipment_id = ? AND status IN ('pending', 'approved', 'returned')
-      LIMIT 1
-    `).get(id);
+    const performDelete = db.transaction(() => {
+      const activeRental = db.prepare(`
+        SELECT id FROM rental_requests
+        WHERE equipment_id = ? AND status IN ('pending', 'approved', 'returned')
+        LIMIT 1
+      `).get(id);
+      if (activeRental) throw Object.assign(new Error('active_rental'), { code: 'active_rental' });
 
-    if (activeRental) {
-      return NextResponse.json(
-        { error: '진행 중인 대여가 있는 장비는 삭제할 수 없습니다.' },
-        { status: 400 }
-      );
+      const anyRental = db.prepare(
+        'SELECT id FROM rental_requests WHERE equipment_id = ? LIMIT 1'
+      ).get(id);
+      if (anyRental) throw Object.assign(new Error('has_history'), { code: 'has_history' });
+
+      const result = db.prepare('DELETE FROM equipment WHERE id = ?').run(id);
+      if (result.changes === 0) throw Object.assign(new Error('not_found'), { code: 'not_found' });
+    });
+
+    try {
+      performDelete();
+    } catch (err) {
+      const e = err as Error & { code?: string };
+      if (e.code === 'active_rental') {
+        return NextResponse.json({ error: '진행 중인 대여가 있는 장비는 삭제할 수 없습니다.' }, { status: 400 });
+      }
+      if (e.code === 'has_history') {
+        return NextResponse.json({ error: '대여 이력이 있는 장비는 삭제할 수 없습니다.' }, { status: 400 });
+      }
+      if (e.code === 'not_found') {
+        return NextResponse.json({ error: '장비를 찾을 수 없습니다.' }, { status: 404 });
+      }
+      throw err;
     }
 
-    const anyRental = db.prepare('SELECT id FROM rental_requests WHERE equipment_id = ? LIMIT 1').get(id);
-    if (anyRental) {
-      return NextResponse.json(
-        { error: '대여 이력이 있는 장비는 삭제할 수 없습니다.' },
-        { status: 400 }
-      );
-    }
-
-    db.prepare('DELETE FROM equipment WHERE id = ?').run(id);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: '장비 삭제에 실패했습니다.' }, { status: 500 });
