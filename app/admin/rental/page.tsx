@@ -75,7 +75,7 @@ function formatRentalDate(d: string | null) {
   return `${y}.${m}.${day}`;
 }
 
-function PhotoUpload({ label, onChange }: { label: string; onChange: (data: string, mime: string) => void }) {
+function PhotoUpload({ label, onChange, onRemove }: { label: string; onChange: (data: string, mime: string) => void; onRemove?: () => void }) {
   const ref = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [sizeError, setSizeError] = useState('');
@@ -92,6 +92,12 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
       onChange(src.split(',')[1], file.type);
     };
     reader.readAsDataURL(file);
+  }
+
+  function handleRemove() {
+    setPreview(null);
+    if (ref.current) ref.current.value = '';
+    onRemove?.();
   }
 
   return (
@@ -114,6 +120,11 @@ function PhotoUpload({ label, onChange }: { label: string; onChange: (data: stri
         )}
       </div>
       {sizeError && <p className="text-xs text-red-600 mt-1">{sizeError}</p>}
+      {preview && (
+        <button type="button" onClick={handleRemove} className="text-xs text-red-500 mt-1.5 hover:underline">
+          사진 제거
+        </button>
+      )}
       <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
     </div>
   );
@@ -546,6 +557,7 @@ export default function AdminRentalPage() {
                         <PhotoUpload
                           label="사진 (선택)"
                           onChange={(data, mime) => setActionState(s => s ? { ...s, photo: data, photoMime: mime } : s)}
+                          onRemove={() => setActionState(s => s ? { ...s, photo: '', photoMime: '' } : s)}
                         />
                       )}
 
