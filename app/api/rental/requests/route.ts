@@ -100,6 +100,9 @@ export async function POST(req: NextRequest) {
     if (requester_name.trim().length > 100) {
       return NextResponse.json({ error: '이름은 100자 이하여야 합니다.' }, { status: 400 });
     }
+    if (requester_phone.trim().length < 4) {
+      return NextResponse.json({ error: '연락처는 4자 이상 입력해주세요.' }, { status: 400 });
+    }
     if (requester_phone.trim().length > 20) {
       return NextResponse.json({ error: '연락처는 20자 이하여야 합니다.' }, { status: 400 });
     }
