@@ -650,6 +650,7 @@ export default function AdminRentalPage() {
                           placeholder={actionState.action === 'reject' ? '거절 사유를 입력하세요.' : '관리자 메모'}
                           rows={2}
                           maxLength={500}
+                          autoFocus={actionState.action === 'reject'}
                           style={{ fontSize: '16px' }}
                           className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none ${
                             actionState.action === 'reject' && !actionState.note.trim()
@@ -680,7 +681,7 @@ export default function AdminRentalPage() {
                               : 'bg-indigo-600 text-white hover:bg-indigo-700'
                           }`}
                         >
-                          {processing ? '처리 중...' : '확인'}
+                          {processing ? '처리 중...' : ACTION_CONFIG[selected.status]?.label[actionState.action] ?? '확인'}
                         </button>
                       </div>
                     </div>
