@@ -50,7 +50,9 @@ export default function AdminLoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="관리자 비밀번호 입력"
+              maxLength={200}
               autoFocus
+              style={{ fontSize: '16px' }}
               className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>

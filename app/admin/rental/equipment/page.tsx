@@ -29,16 +29,20 @@ export default function AdminEquipmentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [fetchError, setFetchError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fetchEquipment = useCallback(async () => {
+    setFetchError('');
     try {
       const res = await fetch('/api/rental/equipment');
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
+      if (!res.ok) { setFetchError('목록을 불러오지 못했습니다.'); return; }
       const data = await res.json();
       setEquipment(Array.isArray(data) ? data : []);
     } catch {
-      console.error('장비 목록 로드 실패');
+      setFetchError('목록을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
@@ -113,14 +117,15 @@ export default function AdminEquipmentPage() {
   }
 
   async function handleDelete(id: string) {
+    setDeleteError('');
     try {
       const res = await fetch(`/api/rental/equipment/${id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || '삭제 실패'); return; }
+      if (!res.ok) { setDeleteError(data.error || '삭제 실패'); return; }
       setDeleteConfirm(null);
       fetchEquipment();
     } catch {
-      alert('네트워크 오류가 발생했습니다.');
+      setDeleteError('네트워크 오류가 발생했습니다.');
     }
   }
 
@@ -162,6 +167,17 @@ export default function AdminEquipmentPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-5 sm:py-6">
+        {fetchError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm text-red-700">{fetchError}</p>
+            <button onClick={fetchEquipment} className="text-xs text-red-600 font-medium underline shrink-0">다시 시도</button>
+          </div>
+        )}
+        {!loading && !fetchError && equipment.length > 0 && (
+          <p className="text-xs text-slate-400 mb-3">
+            전체 {equipment.length}개 · 대여 가능 {equipment.filter(e => e.is_available).length}개 · 대여 중 {equipment.filter(e => !e.is_available).length}개
+          </p>
+        )}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {[1, 2, 3].map(i => <div key={i} className="bg-white rounded-xl h-52 border border-slate-200 animate-pulse" />)}
@@ -212,7 +228,7 @@ export default function AdminEquipmentPage() {
                       수정
                     </button>
                     <button
-                      onClick={() => setDeleteConfirm(eq.id)}
+                      onClick={() => { setDeleteConfirm(eq.id); setDeleteError(''); }}
                       className="flex-1 py-2 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 min-h-[40px]"
                     >
                       삭제
@@ -346,7 +362,8 @@ export default function AdminEquipmentPage() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-xl p-6">
             <h3 className="font-bold text-slate-900 mb-2">장비 삭제</h3>
-            <p className="text-sm text-slate-500 mb-6">이 장비를 삭제하시겠습니까? 진행 중인 대여가 있으면 삭제할 수 없습니다.</p>
+            <p className="text-sm text-slate-500 mb-4">이 장비를 삭제하시겠습니까? 진행 중인 대여가 있으면 삭제할 수 없습니다.</p>
+            {deleteError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{deleteError}</p>}
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
