@@ -143,9 +143,12 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
 
   async function handleRefresh() {
     setRefreshing(true);
-    const last4 = data?.verified ? phoneInput.replace(/\D/g, '').slice(-4) : undefined;
-    await fetchStatus(last4 && last4.length === 4 ? last4 : undefined);
-    setRefreshing(false);
+    try {
+      const last4 = data?.verified ? phoneInput.replace(/\D/g, '').slice(-4) : undefined;
+      await fetchStatus(last4 && last4.length === 4 ? last4 : undefined);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   const steps: { label: string; icon: React.ReactNode }[] = [

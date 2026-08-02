@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRentalDb } from '@/lib/rental-db';
 
-// In-memory rate limit: max 10 verify attempts per request_number per 15 minutes
+// In-memory rate limit: max 10 verify attempts per IP per request_number per 15 minutes.
+// Key includes IP to prevent a single attacker from locking out the legitimate owner.
 const verifyAttempts = new Map<string, { count: number; resetAt: number }>();
 
-function checkRateLimit(key: string): boolean {
+function checkRateLimit(ip: string, reqNumber: string): boolean {
+  const key = `${ip}:${reqNumber}`;
   const now = Date.now();
   const WINDOW_MS = 15 * 60 * 1000;
   const MAX_ATTEMPTS = 10;
@@ -53,7 +55,8 @@ export async function GET(
         return NextResponse.json({ error: '연락처가 일치하지 않습니다.' }, { status: 403 });
       }
 
-      if (!checkRateLimit(number)) {
+      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+      if (!checkRateLimit(ip, number)) {
         return NextResponse.json(
           { error: '잠시 후 다시 시도해주세요. (15분간 10회 제한)' },
           { status: 429 }
