@@ -10,6 +10,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const onlyAvailable = searchParams.get('available') === 'true';
 
+    // Full equipment list (including unavailable) is admin-only;
+    // public callers must pass ?available=true
+    if (!onlyAvailable && !isAdmin(req)) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 });
+    }
+
     const query = onlyAvailable
       ? 'SELECT * FROM equipment WHERE is_available = 1 ORDER BY name ASC'
       : 'SELECT * FROM equipment ORDER BY name ASC';
