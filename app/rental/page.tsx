@@ -188,7 +188,7 @@ export default function RentalPage() {
             <p className="text-xs text-slate-400 hidden sm:block">장비 대여 신청</p>
           </div>
           <form
-            onSubmit={(e) => { e.preventDefault(); if (searchNumber.trim()) window.location.href = `/rental/${searchNumber.trim()}`; }}
+            onSubmit={(e) => { e.preventDefault(); if (searchNumber.trim()) window.location.href = `/rental/${encodeURIComponent(searchNumber.trim())}`; }}
             className="flex gap-2 flex-1 max-w-xs sm:max-w-sm"
           >
             <input

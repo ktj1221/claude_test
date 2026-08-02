@@ -249,7 +249,15 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
             {data.status !== 'rejected' && (
               <div className="bg-white rounded-2xl border border-slate-200 p-5">
                 <div className="flex items-center justify-between relative">
-                  <div className="absolute top-5 left-5 right-5 h-0.5 bg-slate-200 z-0" />
+                  {(() => {
+                    const currentStep = STATUS_CONFIG[data.status]?.step ?? 0;
+                    const pct = Math.max(0, (currentStep - 1) / (steps.length - 1) * 100);
+                    return (
+                      <div className="absolute top-5 left-5 right-5 h-0.5 bg-slate-200 z-0">
+                        <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    );
+                  })()}
                   {steps.map((step, i) => {
                     const currentStep = STATUS_CONFIG[data.status]?.step ?? 0;
                     const isActive = i + 1 <= currentStep;
