@@ -247,7 +247,7 @@ export default function AdminEquipmentPage() {
           <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between shrink-0">
               <h2 className="font-bold text-slate-900">{editTarget ? '장비 수정' : '장비 추가'}</h2>
-              <button onClick={() => setShowForm(false)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+              <button onClick={() => setShowForm(false)} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

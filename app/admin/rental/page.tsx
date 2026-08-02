@@ -313,6 +313,7 @@ export default function AdminRentalPage() {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
+              aria-label="검색어 지우기"
               className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -411,7 +412,7 @@ export default function AdminRentalPage() {
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_CONFIG[selected.status]?.bg} ${STATUS_CONFIG[selected.status]?.color}`}>
                   {STATUS_CONFIG[selected.status]?.label}
                 </span>
-                <button onClick={() => { setSelected(null); setActionState(null); }} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
+                <button onClick={() => { setSelected(null); setActionState(null); }} aria-label="닫기" className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>

@@ -210,6 +210,7 @@ export default function RentalStatusPage({ params }: { params: Promise<{ number:
                   <button
                     onClick={copyLink}
                     title="링크 복사"
+                    aria-label={copied ? '링크 복사됨' : '링크 복사'}
                     className={`p-1.5 rounded-lg border transition-all ${copied ? 'bg-green-50 border-green-200 text-green-600' : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600'}`}
                   >
                     {copied ? (
