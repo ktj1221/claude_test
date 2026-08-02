@@ -4,6 +4,30 @@ import { MAX_PHOTO_B64_LEN, VALID_IMAGE_MIMES } from '@/lib/constants';
 import { isAdmin } from '@/lib/admin-auth';
 import { v4 as uuidv4 } from 'uuid';
 
+// In-memory rate limit: max 5 submissions per IP per 10 minutes
+const submitAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function checkSubmitRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const WINDOW_MS = 10 * 60 * 1000;
+  const MAX_ATTEMPTS = 5;
+
+  if (submitAttempts.size > 1000) {
+    for (const [k, v] of submitAttempts) {
+      if (now >= v.resetAt) submitAttempts.delete(k);
+    }
+  }
+
+  const entry = submitAttempts.get(ip);
+  if (!entry || now >= entry.resetAt) {
+    submitAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= MAX_ATTEMPTS) return false;
+  entry.count++;
+  return true;
+}
+
 export async function GET(req: NextRequest) {
   if (!isAdmin(req)) {
     return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 });
@@ -46,6 +70,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkSubmitRateLimit(ip)) {
+    return NextResponse.json(
+      { error: '잠시 후 다시 시도해주세요. (10분간 5회 제한)' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json();
     const {
