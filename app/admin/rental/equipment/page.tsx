@@ -35,6 +35,7 @@ export default function AdminEquipmentPage() {
 
   const fetchEquipment = useCallback(async () => {
     setFetchError('');
+    setLoading(true);
     try {
       const res = await fetch('/api/rental/equipment');
       if (res.status === 401) { router.push('/admin/rental/login'); return; }
